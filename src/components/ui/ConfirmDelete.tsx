@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react'
 
+import { useI18n } from '@/i18n'
+
 import { Button } from './Button'
 
 interface ConfirmDeleteProps {
@@ -11,6 +13,7 @@ interface ConfirmDeleteProps {
 
 /** Inline "are you sure?" step, used inside dialogs instead of confirm(). */
 export function ConfirmDelete({ itemName, onCancel, onConfirm }: ConfirmDeleteProps) {
+  const { t } = useI18n()
   const cancelRef = useRef<HTMLButtonElement>(null)
 
   // The button that opened this step is gone; move focus to the safe choice
@@ -22,15 +25,16 @@ export function ConfirmDelete({ itemName, onCancel, onConfirm }: ConfirmDeletePr
   return (
     <div className="space-y-4">
       <p role="alert">
-        ¿Seguro que quieres borrar <strong className="break-words">«{itemName}»</strong>? No se
-        puede deshacer.
+        {t('confirm.before')}
+        <strong className="break-words">«{itemName}»</strong>
+        {t('confirm.after')}
       </p>
       <div className="flex justify-end gap-2">
         <Button ref={cancelRef} onClick={onCancel}>
-          Cancelar
+          {t('common.cancel')}
         </Button>
         <Button variant="danger" onClick={onConfirm}>
-          Borrar
+          {t('common.delete')}
         </Button>
       </div>
     </div>

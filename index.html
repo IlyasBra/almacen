@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -16,6 +16,20 @@
         document
           .querySelector('meta[name="theme-color"]')
           .setAttribute('content', dark ? '#0f172a' : '#f8fafc')
+      } catch (error) {}
+      // Same for the language: set it (and the direction) before the app loads.
+      try {
+        var supported = ['es', 'en', 'fr', 'ar', 'it', 'de']
+        var choice = JSON.parse(localStorage.getItem('almacen:language') || '"auto"')
+        var language = supported.indexOf(choice) >= 0 ? choice : null
+        var preferred = navigator.languages || [navigator.language]
+        for (var i = 0; !language && i < preferred.length; i++) {
+          var base = String(preferred[i]).toLowerCase().split('-')[0]
+          if (supported.indexOf(base) >= 0) language = base
+        }
+        language = language || 'en'
+        document.documentElement.lang = language
+        document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr'
       } catch (error) {}
     </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />

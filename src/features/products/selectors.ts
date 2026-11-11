@@ -1,6 +1,7 @@
+import { t } from '@/i18n'
 import { matchesQuery } from '@/lib/text'
 
-import { stockStatus, suggestedOrder } from './model'
+import { stockStatus, suggestedOrder, unitLabel } from './model'
 import { type Product, type StockStatus } from './types'
 
 /** "all", "none" (no category) or a category id. */
@@ -60,7 +61,7 @@ export function restockList(products: readonly Product[]): Product[] {
     .toSorted(
       (a, b) =>
         Number(productStatus(a) !== 'out') - Number(productStatus(b) !== 'out') ||
-        a.name.localeCompare(b.name, 'es'),
+        a.name.localeCompare(b.name),
     )
 }
 
@@ -68,11 +69,14 @@ export function restockList(products: readonly Product[]): Product[] {
 export function restockText(products: readonly Product[], format: (n: number) => string): string {
   const lines = restockList(products).map((product) => {
     const order = suggestedOrder(product)
-    const unit = product.unit
-    const base = `- ${product.name}: quedan ${format(product.quantity)} ${unit}`
-    return order > 0 ? `${base} (pedir unas ${format(order)})` : base
+    const base = t('restock.textLine', {
+      name: product.name,
+      amount: format(product.quantity),
+      unit: unitLabel(product.unit),
+    })
+    return order > 0 ? `${base} ${t('restock.textOrder', { amount: format(order) })}` : base
   })
-  return ['Pedido para el almacén:', ...lines].join('\n')
+  return [t('restock.textTitle'), ...lines].join('\n')
 }
 
 export function findByBarcode(products: readonly Product[], barcode: string): Product | undefined {

@@ -69,17 +69,28 @@ export function useRepositoryStore<T extends Entity, Input, Changes>(
     }
   }, [repository])
 
-  /** Runs a repository call and turns failures into a user-facing message. */
+  // Writes run one after another, in the order the user made them. Otherwise a
+  // quick "undo" could reach the database before the action it reverts.
+  const queueRef = useRef<Promise<unknown>>(Promise.resolve())
+  // Latest update per item: older answers must not overwrite a newer optimistic state.
+  const latestUpdateRef = useRef(new Map<string, number>())
+  const updateCounterRef = useRef(0)
+
+  /** Runs a repository call (after the pending ones) and turns failures into a user-facing message. */
   const attempt = useCallback(
-    async <R>(action: () => Promise<R>, message: string): Promise<R | undefined> => {
-      try {
-        setError(null)
-        return await action()
-      } catch (reason) {
-        console.error(reason)
-        setError(message)
-        return undefined
-      }
+    <R>(action: () => Promise<R>, message: string): Promise<R | undefined> => {
+      const run = queueRef.current.then(async () => {
+        try {
+          setError(null)
+          return await action()
+        } catch (reason) {
+          console.error(reason)
+          setError(message)
+          return undefined
+        }
+      })
+      queueRef.current = run
+      return run
     },
     [],
   )
@@ -101,10 +112,13 @@ export function useRepositoryStore<T extends Entity, Input, Changes>(
       const replace = (next: T) => {
         setItems((current) => current.map((item) => (item.id === id ? next : item)))
       }
+      const version = ++updateCounterRef.current
+      latestUpdateRef.current.set(id, version)
       replace(model.applyChanges(previous, changes, new Date()))
 
       const saved = await attempt(() => repository.update(id, changes), messages.update)
-      replace(saved ?? previous)
+      // A newer update of the same item is already on screen: keep it.
+      if (latestUpdateRef.current.get(id) === version) replace(saved ?? previous)
       return saved !== undefined
     },
     [attempt, repository, model, messages],

@@ -3,10 +3,11 @@ import { type ChangeEvent, type SubmitEvent, useEffect, useId, useRef, useState 
 import { Button } from '@/components/ui/Button'
 import { CameraIcon, CloseIcon } from '@/components/ui/icons'
 import { inputClassName } from '@/components/ui/styles'
+import { type MessageKey, useI18n } from '@/i18n'
 
 import {
   decodeImageFile,
-  SCANNER_ERROR_MESSAGES,
+  SCANNER_ERROR_KEYS,
   ScannerError,
   type ScannerHandle,
   startLiveScanner,
@@ -22,7 +23,7 @@ interface ScannerDialogProps {
 type ScanState =
   | { kind: 'starting' }
   | { kind: 'scanning' }
-  | { kind: 'error'; message: string }
+  | { kind: 'error'; message: MessageKey }
   | { kind: 'reading-photo' }
 
 /**
@@ -35,6 +36,7 @@ export function ScannerDialog({ open, onClose, onDetected }: ScannerDialogProps)
   const videoRef = useRef<HTMLVideoElement>(null)
   const [state, setState] = useState<ScanState>({ kind: 'starting' })
   const [typing, setTyping] = useState(false)
+  const { t } = useI18n()
   const titleId = useId()
   const codeId = useId()
 
@@ -72,11 +74,8 @@ export function ScannerDialog({ open, onClose, onDetected }: ScannerDialogProps)
       },
       (error: unknown) => {
         if (cancelled) return
-        const message =
-          error instanceof ScannerError
-            ? SCANNER_ERROR_MESSAGES[error.kind]
-            : SCANNER_ERROR_MESSAGES.failed
-        setState({ kind: 'error', message })
+        const kind = error instanceof ScannerError ? error.kind : 'failed'
+        setState({ kind: 'error', message: SCANNER_ERROR_KEYS[kind] })
       },
     )
 
@@ -97,7 +96,7 @@ export function ScannerDialog({ open, onClose, onDetected }: ScannerDialogProps)
     else
       setState({
         kind: 'error',
-        message: 'No se ha podido leer el código en la foto. Acércate más, con buena luz.',
+        message: 'scanner.photoFailed',
       })
   }
 
@@ -117,16 +116,16 @@ export function ScannerDialog({ open, onClose, onDetected }: ScannerDialogProps)
       <div className="relative flex h-full flex-col">
         <div className="flex items-center justify-between gap-4 px-4 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-3">
           <h2 id={titleId} className="text-lg font-semibold">
-            Escanear código
+            {t('scanner.title')}
           </h2>
           <Button
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="-mr-2 text-white hover:bg-white/10 hover:text-white dark:text-white"
+            className="-me-2 text-white hover:bg-white/10 hover:text-white dark:text-white"
           >
             <CloseIcon />
-            <span className="sr-only">Cerrar</span>
+            <span className="sr-only">{t('common.close')}</span>
           </Button>
         </div>
 
@@ -149,10 +148,10 @@ export function ScannerDialog({ open, onClose, onDetected }: ScannerDialogProps)
             role="status"
             className="absolute inset-x-4 bottom-4 rounded-xl bg-black/60 px-4 py-3 text-center text-sm"
           >
-            {state.kind === 'starting' && 'Abriendo la cámara…'}
-            {state.kind === 'scanning' && 'Apunta al código de barras. Se leerá solo.'}
-            {state.kind === 'reading-photo' && 'Leyendo el código de la foto…'}
-            {state.kind === 'error' && state.message}
+            {state.kind === 'starting' && t('scanner.starting')}
+            {state.kind === 'scanning' && t('scanner.scanning')}
+            {state.kind === 'reading-photo' && t('scanner.readingPhoto')}
+            {state.kind === 'error' && t(state.message)}
           </p>
         </div>
 
@@ -160,7 +159,7 @@ export function ScannerDialog({ open, onClose, onDetected }: ScannerDialogProps)
           {typing ? (
             <form onSubmit={submitCode} className="flex gap-2">
               <label htmlFor={codeId} className="sr-only">
-                Código de barras
+                {t('scanner.codeLabel')}
               </label>
               <input
                 id={codeId}
@@ -170,18 +169,18 @@ export function ScannerDialog({ open, onClose, onDetected }: ScannerDialogProps)
                 // The person just asked to type, so the field should be ready.
                 // eslint-disable-next-line jsx-a11y/no-autofocus
                 autoFocus
-                placeholder="Escribe el código"
+                placeholder={t('scanner.codePlaceholder')}
                 className={inputClassName}
               />
               <Button type="submit" variant="primary">
-                Buscar
+                {t('scanner.search')}
               </Button>
             </form>
           ) : (
             <div className="grid grid-cols-2 gap-2">
               <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-white/10 px-3 text-sm font-medium focus-within:ring-2 focus-within:ring-white hover:bg-white/20">
                 <CameraIcon />
-                Hacer foto
+                {t('scanner.takePhoto')}
                 <input
                   type="file"
                   accept="image/*"
@@ -196,7 +195,7 @@ export function ScannerDialog({ open, onClose, onDetected }: ScannerDialogProps)
                 }}
                 className="justify-center bg-white/10 text-sm text-white ring-0 hover:bg-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
               >
-                Escribir código
+                {t('scanner.typeCode')}
               </Button>
             </div>
           )}

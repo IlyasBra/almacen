@@ -28,9 +28,10 @@ import { ScannerDialog } from '@/features/scanner/ScannerDialog'
 import { SettingsDialog } from '@/features/settings/components/SettingsDialog'
 import { useTheme } from '@/features/settings/useTheme'
 import { useHashRoute } from '@/hooks/useHashRoute'
+import { useI18n } from '@/i18n'
 import { usePersistentStorage } from '@/hooks/usePersistentStorage'
 
-import { DEFAULT_ROUTE, NAV_ITEMS, ROUTES } from './routes'
+import { DEFAULT_ROUTE, navItems, ROUTES } from './routes'
 
 interface MainScreenProps {
   isPersistent: boolean
@@ -39,6 +40,7 @@ interface MainScreenProps {
 export function MainScreen({ isPersistent }: MainScreenProps) {
   const route = useHashRoute(ROUTES, DEFAULT_ROUTE)
   const inventory = useInventory()
+  const { t } = useI18n()
   const theme = useTheme()
   const isStoragePersistent = usePersistentStorage()
 
@@ -86,15 +88,10 @@ export function MainScreen({ isPersistent }: MainScreenProps) {
   }, [])
 
   const restockCount = restockList(inventory.products).length
-  const navItems = NAV_ITEMS.map((item) =>
-    item.id === 'reponer' && restockCount > 0
-      ? { ...item, label: `Reponer (${String(restockCount)})` }
-      : item,
-  )
 
   return (
     <AppShell
-      nav={<MainNav items={navItems} currentId={route} />}
+      nav={<MainNav items={navItems(t, restockCount)} currentId={route} />}
       headerActions={
         <Button
           variant="ghost"
@@ -102,43 +99,36 @@ export function MainScreen({ isPersistent }: MainScreenProps) {
           onClick={() => {
             setSettingsOpen(true)
           }}
-          className="-mr-2"
+          className="-me-2"
         >
           <SettingsIcon />
-          <span className="sr-only">Ajustes</span>
+          <span className="sr-only">{t('header.settings')}</span>
         </Button>
       }
     >
       <div className="mb-5 space-y-3 empty:hidden">
-        {!isPersistent && (
-          <Notice tone="warning">
-            Este navegador no permite guardar datos: lo que apuntes se perderá al cerrar la app.
-          </Notice>
-        )}
+        {!isPersistent && <Notice tone="warning">{t('main.noStorage')}</Notice>}
         {inventory.error && (
           <Notice tone="error" onDismiss={inventory.dismissError}>
-            {inventory.error} Inténtalo de nuevo.
+            {inventory.error} {t('main.retry')}
           </Notice>
         )}
       </div>
 
       {inventory.status === 'loading' && (
-        <p className="text-slate-600 dark:text-slate-400">Cargando…</p>
+        <p className="text-slate-600 dark:text-slate-400">{t('common.loading')}</p>
       )}
       {inventory.status === 'error' && (
-        <EmptyState
-          title="No se han podido cargar tus datos"
-          description="Recarga la página. Si el problema sigue, revisa el espacio libre del móvil."
-        />
+        <EmptyState title={t('main.loadErrorTitle')} description={t('main.loadErrorDescription')} />
       )}
       {inventory.status === 'ready' && (
         <>
           <h1 className="sr-only">
             {route === 'inventario'
-              ? 'Inventario'
+              ? t('nav.inventory')
               : route === 'reponer'
-                ? 'Por reponer'
-                : 'Movimientos'}
+                ? t('heading.restock')
+                : t('nav.movements')}
           </h1>
           {route === 'inventario' && (
             <InventoryView
@@ -156,24 +146,24 @@ export function MainScreen({ isPersistent }: MainScreenProps) {
           {route === 'reponer' && <RestockView onOpen={openProduct} />}
           {route === 'movimientos' && <MovementsView />}
 
-          <div className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex items-center gap-2 md:bottom-8">
+          <div className="fixed end-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex items-center gap-2 md:bottom-8">
             <Button
               onClick={() => {
                 setScanCount(null)
                 setForm({ mode: 'create' })
               }}
-              className="h-14 rounded-full pr-5 pl-4 shadow-lg"
+              className="h-14 rounded-full ps-4 pe-5 shadow-lg"
             >
               <PlusIcon />
-              Nuevo
+              {t('main.new')}
             </Button>
             <Button
               variant="primary"
               onClick={startScan}
-              className="h-14 rounded-full pr-5 pl-4 shadow-lg"
+              className="h-14 rounded-full ps-4 pe-5 shadow-lg"
             >
               <BarcodeIcon />
-              Escanear
+              {t('main.scan')}
             </Button>
           </div>
         </>

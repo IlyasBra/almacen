@@ -1,3 +1,4 @@
+import { type MessageKey, t } from '@/i18n'
 import { type EntityModel } from '@/lib/data/repository'
 
 import { type Movement, type MovementChanges, type MovementInput, type MovementKind } from './types'
@@ -12,11 +13,15 @@ export const movementModel: EntityModel<Movement, MovementInput, MovementChanges
   applyChanges: (movement) => movement,
 }
 
-export const MOVEMENT_KIND_LABELS: Record<MovementKind, string> = {
-  in: 'Entrada',
-  out: 'Salida',
-  adjust: 'Ajuste',
-  new: 'Alta',
+const KIND_KEYS: Record<MovementKind, MessageKey> = {
+  in: 'movement.in',
+  out: 'movement.out',
+  adjust: 'movement.adjust',
+  new: 'movement.new',
+}
+
+export function movementKindLabel(kind: MovementKind): string {
+  return t(KIND_KEYS[kind])
 }
 
 /** Kind of movement that takes stock from `before` to `after` with +/- buttons. */

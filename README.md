@@ -15,6 +15,7 @@ App web para controlar el stock del almacén de la tienda: qué hay, cuánto que
 - **Reponer**: agotados y por debajo del aviso, con cantidad sugerida y la lista lista para copiar o enviar por WhatsApp.
 - **Movimientos**: historial de entradas, salidas, ajustes y altas, por días.
 - **Copia de seguridad** en JSON con fotos incluidas, validada al importar.
+- **6 idiomas**: español, inglés, francés, árabe (de derecha a izquierda), italiano y alemán. Usa por defecto el idioma del móvil y se puede cambiar en Ajustes.
 - **Modo oscuro** (sistema, claro u oscuro, sin parpadeo al cargar).
 - **PWA**: instalable, funciona sin conexión y se actualiza sola.
 
@@ -22,18 +23,19 @@ App web para controlar el stock del almacén de la tienda: qué hay, cuánto que
 
 Misma base que [Diario](https://github.com/IlyasBra/diario):
 
-| Pieza   | Elección                     | Motivo                                                                     |
-| ------- | ---------------------------- | -------------------------------------------------------------------------- |
-| UI      | React 19 + TypeScript        | Tipado estricto, sin `any`.                                                |
-| Build   | Vite                         | Arranque rápido y buen soporte de PWA.                                     |
-| Estilos | Tailwind CSS v4              | Mobile-first y modo oscuro con clases.                                     |
-| Datos   | Dexie (IndexedDB)            | Sin backend; las fotos se guardan como Blob en su propia tabla.            |
-| Lector  | BarcodeDetector + ZXing      | El detector nativo donde existe (Android); ZXing en el resto (iPhone).     |
-| PWA     | vite-plugin-pwa (Workbox)    | Caché offline y actualización automática.                                  |
-| Fechas  | date-fns                     | Días y horas en español.                                                   |
-| Tests   | Vitest + Testing Library     | Pruebas de comportamiento, no de implementación.                           |
-| Calidad | ESLint (+jsx-a11y), Prettier | Reglas de accesibilidad en el lint.                                        |
-| CI/CD   | GitHub Actions + Pages       | Formato, lint, tipos, tests y build en cada push; despliegue desde `main`. |
+| Pieza   | Elección                     | Motivo                                                                                   |
+| ------- | ---------------------------- | ---------------------------------------------------------------------------------------- |
+| UI      | React 19 + TypeScript        | Tipado estricto, sin `any`.                                                              |
+| Build   | Vite                         | Arranque rápido y buen soporte de PWA.                                                   |
+| Estilos | Tailwind CSS v4              | Mobile-first y modo oscuro con clases.                                                   |
+| Datos   | Dexie (IndexedDB)            | Sin backend; las fotos se guardan como Blob en su propia tabla.                          |
+| Lector  | BarcodeDetector + ZXing      | El detector nativo donde existe (Android); ZXing en el resto (iPhone).                   |
+| PWA     | vite-plugin-pwa (Workbox)    | Caché offline y actualización automática.                                                |
+| Fechas  | date-fns + `Intl`            | Fechas, horas y números en el formato de cada idioma.                                    |
+| Idiomas | Capa propia (`src/i18n`)     | La misma que Diario: sin dependencias, claves tipadas y plurales con `Intl.PluralRules`. |
+| Tests   | Vitest + Testing Library     | Pruebas de comportamiento, no de implementación.                                         |
+| Calidad | ESLint (+jsx-a11y), Prettier | Reglas de accesibilidad en el lint.                                                      |
+| CI/CD   | GitHub Actions + Pages       | Formato, lint, tipos, tests y build en cada push; despliegue desde `main`.               |
 
 ## Ejecutar en local
 
@@ -67,6 +69,7 @@ src/
   db/           esquema Dexie y elección de repositorios
   features/     products, movements, categories, photos, scanner,
                 inventory (estado), restock, backup, settings
+  i18n/         idiomas, traducciones y detección del idioma
   lib/          utilidades y capa de repositorios
 ```
 
@@ -78,4 +81,6 @@ src/
 - **Fotos aparte.** Se reducen a 1200 px en JPEG y se guardan en su propia tabla; los productos solo guardan el id, así la lista nunca carga imágenes enteras.
 - **Lector en vivo.** La cámara se abre con `getUserMedia`; ZXing se carga solo cuando hace falta para no engordar el arranque. Si no hay cámara o permiso, se puede leer el código de una foto o escribirlo.
 - **Copia de seguridad versionada** (`BACKUP_VERSION`), con las fotos en base64. Todo se valida antes de tocar la base de datos, y se restaura en una sola operación por tabla. La app pide `storage.persist()` para que el navegador no borre los datos.
+- **Unidades guardadas en un solo idioma.** Las unidades se guardan con su clave en español y se muestran traducidas, así cambiar de idioma no altera los datos ni las copias.
+- **Árabe de derecha a izquierda** con clases lógicas de Tailwind (`ps-`, `ms-`, `start-`), y los números siempre de izquierda a derecha.
 - **Accesibilidad.** Diálogos nativos `<dialog>`, etiquetas en todos los controles, objetivos táctiles de 44 px y estado de stock con texto, no solo con color.

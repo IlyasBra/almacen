@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { SearchIcon } from '@/components/ui/icons'
 import { inputClassName } from '@/components/ui/styles'
 import { useInventory } from '@/features/inventory/useInventory'
+import { useI18n } from '@/i18n'
 import { cn } from '@/lib/cn'
 
 import { filterProducts, type ProductFilter, summarizeStock } from '../selectors'
@@ -34,6 +35,7 @@ export function InventoryView({
   onManageCategories,
 }: InventoryViewProps) {
   const { products, categories } = useInventory()
+  const { t } = useI18n()
   const searchId = useId()
   const summary = summarizeStock(products)
   const visible = filterProducts(products, filter)
@@ -43,11 +45,11 @@ export function InventoryView({
   if (products.length === 0) {
     return (
       <EmptyState
-        title="El almacén está vacío"
-        description="Añade tu primer producto. Puedes hacerle una foto y escanear su código de barras."
+        title={t('inventory.emptyTitle')}
+        description={t('inventory.emptyDescription')}
         action={
           <Button variant="primary" onClick={onCreate}>
-            Añadir producto
+            {t('inventory.addProduct')}
           </Button>
         }
       />
@@ -62,7 +64,7 @@ export function InventoryView({
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-2">
         <SummaryTile
-          label="Productos"
+          label={t('inventory.summaryProducts')}
           value={summary.total}
           pressed={filter.status === 'all'}
           onClick={() => {
@@ -70,7 +72,7 @@ export function InventoryView({
           }}
         />
         <SummaryTile
-          label="Queda poco"
+          label={t('inventory.summaryLow')}
           value={summary.low}
           tone="text-amber-700 dark:text-amber-400"
           pressed={filter.status === 'low'}
@@ -79,7 +81,7 @@ export function InventoryView({
           }}
         />
         <SummaryTile
-          label="Agotados"
+          label={t('inventory.summaryOut')}
           value={summary.out}
           tone="text-red-700 dark:text-red-400"
           pressed={filter.status === 'out'}
@@ -91,9 +93,9 @@ export function InventoryView({
 
       <div className="relative">
         <label htmlFor={searchId} className="sr-only">
-          Buscar producto
+          {t('inventory.search')}
         </label>
-        <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-slate-400" />
+        <SearchIcon className="pointer-events-none absolute start-3 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
         <input
           id={searchId}
           type="search"
@@ -101,22 +103,22 @@ export function InventoryView({
           onChange={(event) => {
             onFilterChange({ ...filter, query: event.target.value })
           }}
-          placeholder="Buscar por nombre, código o ubicación"
+          placeholder={t('inventory.searchPlaceholder')}
           autoComplete="off"
-          className={cn(inputClassName, 'pl-10')}
+          className={cn(inputClassName, 'ps-10')}
         />
       </div>
 
       <div
         role="group"
-        aria-label="Categoría"
+        aria-label={t('inventory.categoryGroup')}
         className="-mx-4 flex [scrollbar-width:none] gap-2 overflow-x-auto px-4 pb-1"
       >
         {[
-          { id: 'all', name: 'Todas' },
+          { id: 'all', name: t('inventory.allCategories') },
           ...categories,
           ...(hasUncategorized && categories.length > 0
-            ? [{ id: 'none', name: 'Sin categoría' }]
+            ? [{ id: 'none', name: t('inventory.noCategory') }]
             : []),
         ].map((option) => (
           <button
@@ -139,14 +141,14 @@ export function InventoryView({
             'border border-dashed border-brand-500 text-brand-700 ring-0 dark:text-brand-400',
           )}
         >
-          {categories.length > 0 ? 'Editar categorías' : '+ Crear categorías'}
+          {categories.length > 0 ? t('inventory.editCategories') : t('inventory.createCategories')}
         </button>
       </div>
 
       {visible.length === 0 ? (
-        <EmptyState title="Ningún producto coincide con la búsqueda" />
+        <EmptyState title={t('inventory.noMatch')} />
       ) : (
-        <ul className="space-y-2" aria-label="Productos">
+        <ul className="space-y-2" aria-label={t('inventory.listLabel')}>
           {visible.map((product) => (
             <ProductRow
               key={product.id}
@@ -157,7 +159,7 @@ export function InventoryView({
                   product.location,
                 ]
                   .filter(Boolean)
-                  .join(' · ') || 'Sin categoría ni ubicación'
+                  .join(' · ') || t('inventory.noDetail')
               }
               onOpen={onOpen}
             />
@@ -183,7 +185,7 @@ function SummaryTile({ label, value, tone, pressed, onClick }: SummaryTileProps)
       aria-pressed={pressed}
       onClick={onClick}
       className={cn(
-        'rounded-xl bg-white px-3 py-2 text-left ring-1 dark:bg-slate-900',
+        'rounded-xl bg-white px-3 py-2 text-start ring-1 dark:bg-slate-900',
         pressed ? 'ring-2 ring-brand-500' : 'ring-slate-200 dark:ring-slate-800',
       )}
     >

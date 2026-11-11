@@ -6,6 +6,7 @@ import { CopyIcon, ShareIcon } from '@/components/ui/icons'
 import { useInventory } from '@/features/inventory/useInventory'
 import { ProductRow } from '@/features/products/components/ProductRow'
 import { formatAmount, suggestedOrder } from '@/features/products/model'
+import { useI18n } from '@/i18n'
 import { restockList, restockText } from '@/features/products/selectors'
 import { type Product } from '@/features/products/types'
 
@@ -16,6 +17,7 @@ interface RestockViewProps {
 /** Sold out and low products, with the list ready to send to the supplier. */
 export function RestockView({ onOpen }: RestockViewProps) {
   const { products } = useInventory()
+  const { t } = useI18n()
   const list = restockList(products)
   const [feedback, setFeedback] = useState<string | null>(null)
   const text = restockText(products, formatAmount)
@@ -23,25 +25,22 @@ export function RestockView({ onOpen }: RestockViewProps) {
 
   if (list.length === 0) {
     return (
-      <EmptyState
-        title="Todo en orden"
-        description="Ningún producto está agotado ni por debajo de su aviso."
-      />
+      <EmptyState title={t('restock.allGoodTitle')} description={t('restock.allGoodDescription')} />
     )
   }
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(text)
-      setFeedback('Lista copiada. Pégala en WhatsApp o donde quieras.')
+      setFeedback(t('restock.copied'))
     } catch {
-      setFeedback('No se ha podido copiar. Usa «Enviar» o mantén pulsado el texto.')
+      setFeedback(t('restock.copyFailed'))
     }
   }
 
   const share = async () => {
     try {
-      await navigator.share({ title: 'Pedido para el almacén', text })
+      await navigator.share({ title: t('restock.textTitle'), text })
     } catch {
       // Cancelled by the person: nothing to do.
     }
@@ -53,12 +52,12 @@ export function RestockView({ onOpen }: RestockViewProps) {
         {canShare && (
           <Button variant="primary" onClick={() => void share()}>
             <ShareIcon />
-            Enviar lista
+            {t('restock.share')}
           </Button>
         )}
         <Button onClick={() => void copy()}>
           <CopyIcon />
-          Copiar lista
+          {t('restock.copy')}
         </Button>
       </div>
       {feedback && (
@@ -66,7 +65,7 @@ export function RestockView({ onOpen }: RestockViewProps) {
           {feedback}
         </p>
       )}
-      <ul className="space-y-2" aria-label="Productos por reponer">
+      <ul className="space-y-2" aria-label={t('restock.listLabel')}>
         {list.map((product) => {
           const order = suggestedOrder(product)
           return (
@@ -75,17 +74,20 @@ export function RestockView({ onOpen }: RestockViewProps) {
               product={product}
               detail={
                 product.minimum > 0
-                  ? `Aviso en ${formatAmount(product.minimum)}${order > 0 ? ` · pedir unas ${formatAmount(order)}` : ''}`
-                  : 'Sin aviso configurado'
+                  ? [
+                      t('restock.warningAt', { amount: formatAmount(product.minimum) }),
+                      order > 0 ? t('restock.orderSome', { amount: formatAmount(order) }) : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')
+                  : t('restock.noWarning')
               }
               onOpen={onOpen}
             />
           )
         })}
       </ul>
-      <p className="text-xs text-slate-600 dark:text-slate-400">
-        «Pedir unas» sugiere la cantidad para llegar al doble del aviso.
-      </p>
+      <p className="text-xs text-slate-600 dark:text-slate-400">{t('restock.hint')}</p>
     </div>
   )
 }

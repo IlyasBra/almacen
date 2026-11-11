@@ -1,3 +1,4 @@
+import { getLanguage, intlLocale, type MessageKey, t } from '@/i18n'
 import { type EntityModel } from '@/lib/data/repository'
 
 import {
@@ -71,10 +72,19 @@ export function stockStatus(quantity: number, minimum: number): StockStatus {
   return 'ok'
 }
 
-export const STOCK_STATUS_LABELS: Record<StockStatus, string> = {
-  ok: 'Bien',
-  low: 'Queda poco',
-  out: 'Agotado',
+const STATUS_KEYS: Record<StockStatus, MessageKey> = {
+  ok: 'status.ok',
+  low: 'status.low',
+  out: 'status.out',
+}
+
+export function stockStatusLabel(status: StockStatus): string {
+  return t(STATUS_KEYS[status])
+}
+
+/** Units are stored as Spanish words and shown in the interface language. */
+export function unitLabel(unit: string): string {
+  return isUnit(unit) ? t(`unit.${unit}`) : unit
 }
 
 /** How many to order to reach twice the minimum. 0 when nothing is needed. */
@@ -96,18 +106,16 @@ export function validateProductInput(
 ): ProductInputErrors {
   const errors: ProductInputErrors = {}
   const name = input.name.trim()
-  if (name.length === 0) errors.name = 'Escribe un nombre.'
+  if (name.length === 0) errors.name = t('error.nameRequired')
   else if (name.length > PRODUCT_NAME_MAX_LENGTH)
-    errors.name = `El nombre no puede superar ${PRODUCT_NAME_MAX_LENGTH} caracteres.`
+    errors.name = t('error.nameTooLong', { max: PRODUCT_NAME_MAX_LENGTH })
 
   const barcode = input.barcode.trim()
   const owner = barcode ? others.find((product) => product.barcode === barcode) : undefined
-  if (owner) errors.barcode = `Ese código ya es de «${owner.name}».`
+  if (owner) errors.barcode = t('error.barcodeTaken', { name: owner.name })
 
-  if (!Number.isFinite(input.quantity) || input.quantity < 0)
-    errors.quantity = 'Escribe una cantidad de 0 o más.'
-  if (!Number.isFinite(input.minimum) || input.minimum < 0)
-    errors.minimum = 'Escribe un número de 0 o más.'
+  if (!Number.isFinite(input.quantity) || input.quantity < 0) errors.quantity = t('error.quantity')
+  if (!Number.isFinite(input.minimum) || input.minimum < 0) errors.minimum = t('error.minimum')
   return errors
 }
 
@@ -123,9 +131,15 @@ export function parseAmount(text: string): number {
   return Number.isFinite(value) ? value : Number.NaN
 }
 
-const numberFormat = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 3 })
+const numberFormats = new Map<string, Intl.NumberFormat>()
 
-/** 1234.5 → "1234,5" (Spanish decimal comma). */
+/** 1234.5 → "1234,5" in Spanish, "1,234.5" in English… in the interface language. */
 export function formatAmount(value: number): string {
-  return numberFormat.format(value)
+  const locale = intlLocale(getLanguage())
+  let format = numberFormats.get(locale)
+  if (!format) {
+    format = new Intl.NumberFormat(locale, { maximumFractionDigits: 3 })
+    numberFormats.set(locale, format)
+  }
+  return format.format(value)
 }

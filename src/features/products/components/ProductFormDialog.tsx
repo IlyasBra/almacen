@@ -20,8 +20,15 @@ import { useInventory } from '@/features/inventory/useInventory'
 import { usePhotoUrl } from '@/features/photos/usePhotoUrl'
 import { resizeImage } from '@/features/photos/resizeImage'
 import { ScannerDialog } from '@/features/scanner/ScannerDialog'
+import { useI18n } from '@/i18n'
 
-import { formatAmount, parseAmount, type ProductInputErrors, validateProductInput } from '../model'
+import {
+  formatAmount,
+  parseAmount,
+  type ProductInputErrors,
+  unitLabel,
+  validateProductInput,
+} from '../model'
 import { type Product, type ProductInput, UNITS, type Unit } from '../types'
 
 export type ProductFormState =
@@ -44,11 +51,12 @@ export function ProductFormDialog({
   onDeleted,
   onAssignInstead,
 }: ProductFormDialogProps) {
+  const { t } = useI18n()
   return (
     <Dialog
       open={state !== null}
       onClose={onClose}
-      title={state?.mode === 'edit' ? 'Editar producto' : 'Nuevo producto'}
+      title={state?.mode === 'edit' ? t('form.editTitle') : t('form.newTitle')}
     >
       {state && (
         <ProductForm
@@ -114,6 +122,7 @@ function ProductForm({
   onAssignInstead,
 }: Omit<ProductFormDialogProps, 'state' | 'onClose'> & { state: ProductFormState }) {
   const inventory = useInventory()
+  const { t } = useI18n()
   const editing = state.mode === 'edit' ? state.product : null
   const [draft, setDraft] = useState<Draft>(() => initialDraft(state))
   const [errors, setErrors] = useState<ProductInputErrors & { newCategory?: string }>({})
@@ -156,7 +165,7 @@ function ProductForm({
       setPhotoPreview(URL.createObjectURL(blob))
     } catch (error) {
       console.error(error)
-      setPhotoError('No se ha podido abrir la foto. Prueba con otra.')
+      setPhotoError(t('form.photoError'))
     }
   }
 
@@ -233,8 +242,11 @@ function ProductForm({
       <form onSubmit={(event) => void submit(event)} noValidate className="space-y-4">
         {state.mode === 'create' && state.fromScan && state.barcode && (
           <Notice tone="warning">
-            No hay ningún producto con el código <span className="font-mono">{state.barcode}</span>.
-            Créalo aquí o{' '}
+            {t('form.unknownCodeBefore')}
+            <span className="font-mono" dir="ltr">
+              {state.barcode}
+            </span>
+            {t('form.unknownCodeMiddle')}
             <button
               type="button"
               className="font-semibold underline"
@@ -242,25 +254,29 @@ function ProductForm({
                 onAssignInstead(state.barcode ?? '')
               }}
             >
-              asígnalo a uno que ya tengas
+              {t('form.assignLink')}
             </button>
-            .
+            {t('form.unknownCodeAfter')}
           </Notice>
         )}
 
         <div className="flex items-center gap-3">
           <div className="grid size-24 shrink-0 place-items-center overflow-hidden rounded-xl bg-brand-50 text-brand-600 dark:bg-slate-800 dark:text-brand-400">
             {shownPhoto ? (
-              <img src={shownPhoto} alt="Foto del producto" className="size-full object-cover" />
+              <img src={shownPhoto} alt={t('form.photoAlt')} className="size-full object-cover" />
             ) : (
               <CameraIcon className="size-8" />
             )}
           </div>
           <div className="flex flex-1 flex-col gap-2">
-            <PhotoButton label="Hacer foto" capture onChange={(event) => void pickPhoto(event)}>
+            <PhotoButton
+              label={t('form.takePhoto')}
+              capture
+              onChange={(event) => void pickPhoto(event)}
+            >
               <CameraIcon />
             </PhotoButton>
-            <PhotoButton label="Elegir de la galería" onChange={(event) => void pickPhoto(event)}>
+            <PhotoButton label={t('form.pickPhoto')} onChange={(event) => void pickPhoto(event)}>
               <ImageIcon />
             </PhotoButton>
             {shownPhoto && (
@@ -273,20 +289,25 @@ function ProductForm({
                 }}
               >
                 <TrashIcon className="size-4" />
-                Quitar foto
+                {t('form.removePhoto')}
               </Button>
             )}
           </div>
         </div>
         {photoError && <Notice tone="error">{photoError}</Notice>}
 
-        <Field label="Nombre" htmlFor={`${id}-name`} errorId={errorId('name')} error={errors.name}>
+        <Field
+          label={t('form.name')}
+          htmlFor={`${id}-name`}
+          errorId={errorId('name')}
+          error={errors.name}
+        >
           <input
             id={`${id}-name`}
             value={draft.name}
             onChange={set('name')}
             autoComplete="off"
-            placeholder="Ej.: Agua mineral 1,5 L"
+            placeholder={t('form.namePlaceholder')}
             aria-invalid={errors.name !== undefined}
             aria-describedby={errors.name ? errorId('name') : undefined}
             className={inputClassName}
@@ -294,7 +315,7 @@ function ProductForm({
         </Field>
 
         <Field
-          label="Código de barras"
+          label={t('form.barcode')}
           htmlFor={`${id}-barcode`}
           errorId={errorId('barcode')}
           error={errors.barcode}
@@ -306,7 +327,7 @@ function ProductForm({
               onChange={set('barcode')}
               inputMode="numeric"
               autoComplete="off"
-              placeholder="Escanéalo o escríbelo"
+              placeholder={t('form.barcodePlaceholder')}
               aria-invalid={errors.barcode !== undefined}
               aria-describedby={errors.barcode ? errorId('barcode') : undefined}
               className={inputClassName}
@@ -317,14 +338,14 @@ function ProductForm({
               }}
             >
               <BarcodeIcon />
-              Escanear
+              {t('form.scan')}
             </Button>
           </div>
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
           <Field
-            label={editing ? 'Cantidad actual' : 'Cantidad inicial'}
+            label={editing ? t('form.quantityEdit') : t('form.quantityNew')}
             htmlFor={`${id}-quantity`}
             errorId={errorId('quantity')}
             error={errors.quantity}
@@ -341,7 +362,7 @@ function ProductForm({
               className={inputClassName}
             />
           </Field>
-          <Field label="Unidad" htmlFor={`${id}-unit`} errorId={errorId('unit')}>
+          <Field label={t('form.unit')} htmlFor={`${id}-unit`} errorId={errorId('unit')}>
             <select
               id={`${id}-unit`}
               value={draft.unit}
@@ -349,14 +370,16 @@ function ProductForm({
               className={inputClassName}
             >
               {UNITS.map((unit) => (
-                <option key={unit}>{unit}</option>
+                <option key={unit} value={unit}>
+                  {unitLabel(unit)}
+                </option>
               ))}
             </select>
           </Field>
         </div>
 
         <Field
-          label="Avisar cuando queden"
+          label={t('form.minimum')}
           htmlFor={`${id}-minimum`}
           errorId={errorId('minimum')}
           error={errors.minimum}
@@ -367,7 +390,7 @@ function ProductForm({
             onChange={set('minimum')}
             inputMode="decimal"
             autoComplete="off"
-            placeholder="Ej.: 5 (vacío para no avisar)"
+            placeholder={t('form.minimumPlaceholder')}
             aria-invalid={errors.minimum !== undefined}
             aria-describedby={errors.minimum ? errorId('minimum') : `${id}-minimum-hint`}
             className={inputClassName}
@@ -376,34 +399,42 @@ function ProductForm({
             id={`${id}-minimum-hint`}
             className="mt-1.5 text-xs text-slate-600 dark:text-slate-400"
           >
-            Con esa cantidad o menos aparece en «Reponer».
+            {t('form.minimumHint')}
           </p>
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Categoría" htmlFor={`${id}-category`} errorId={errorId('newCategory')}>
+          <Field
+            label={t('form.category')}
+            htmlFor={`${id}-category`}
+            errorId={errorId('newCategory')}
+          >
             <select
               id={`${id}-category`}
               value={draft.category}
               onChange={set('category')}
               className={inputClassName}
             >
-              <option value={NO_CATEGORY}>Sin categoría</option>
+              <option value={NO_CATEGORY}>{t('form.noCategory')}</option>
               {inventory.categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
                 </option>
               ))}
-              <option value={NEW_CATEGORY}>+ Nueva categoría…</option>
+              <option value={NEW_CATEGORY}>{t('form.newCategoryOption')}</option>
             </select>
           </Field>
-          <Field label="Ubicación" htmlFor={`${id}-location`} errorId={errorId('location')}>
+          <Field
+            label={t('form.location')}
+            htmlFor={`${id}-location`}
+            errorId={errorId('location')}
+          >
             <input
               id={`${id}-location`}
               value={draft.location}
               onChange={set('location')}
               autoComplete="off"
-              placeholder="Ej.: Estantería 2"
+              placeholder={t('form.locationPlaceholder')}
               className={inputClassName}
             />
           </Field>
@@ -411,7 +442,7 @@ function ProductForm({
 
         {draft.category === NEW_CATEGORY && (
           <Field
-            label="Nombre de la nueva categoría"
+            label={t('form.newCategoryName')}
             htmlFor={`${id}-new-category`}
             errorId={errorId('newCategory')}
             error={errors.newCategory}
@@ -421,7 +452,7 @@ function ProductForm({
               value={draft.newCategory}
               onChange={set('newCategory')}
               autoComplete="off"
-              placeholder="Ej.: Bebidas"
+              placeholder={t('form.newCategoryPlaceholder')}
               aria-invalid={errors.newCategory !== undefined}
               aria-describedby={errors.newCategory ? errorId('newCategory') : undefined}
               className={inputClassName}
@@ -429,20 +460,20 @@ function ProductForm({
           </Field>
         )}
 
-        <Field label="Notas" htmlFor={`${id}-notes`} errorId={errorId('notes')}>
+        <Field label={t('form.notes')} htmlFor={`${id}-notes`} errorId={errorId('notes')}>
           <textarea
             id={`${id}-notes`}
             value={draft.notes}
             onChange={set('notes')}
             rows={2}
-            placeholder="Proveedor, caducidad, lo que quieras recordar"
+            placeholder={t('form.notesPlaceholder')}
             className={inputClassName}
           />
         </Field>
 
         <div className="flex flex-col gap-2 pt-1">
           <Button type="submit" variant="primary" disabled={saving} className="justify-center">
-            {editing ? 'Guardar cambios' : 'Añadir producto'}
+            {editing ? t('form.submitEdit') : t('form.submitNew')}
           </Button>
           {editing && (
             <Button
@@ -452,7 +483,7 @@ function ProductForm({
                 setConfirmingDelete(true)
               }}
             >
-              Borrar producto
+              {t('form.delete')}
             </Button>
           )}
         </div>

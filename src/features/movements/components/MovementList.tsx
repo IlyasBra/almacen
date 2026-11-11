@@ -1,10 +1,10 @@
-import { format, isToday, isYesterday } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { isToday, isYesterday } from 'date-fns'
 
 import { formatAmount } from '@/features/products/model'
+import { getLanguage, intlLocale, t, useI18n } from '@/i18n'
 import { cn } from '@/lib/cn'
 
-import { groupMovementsByDay, MOVEMENT_KIND_LABELS } from '../model'
+import { groupMovementsByDay, movementKindLabel } from '../model'
 import { type Movement } from '../types'
 
 interface MovementListProps {
@@ -24,12 +24,24 @@ const ICON_CLASS: Record<Movement['kind'], string> = {
 function dayLabel(day: string): string {
   const [year = 0, month = 1, date = 1] = day.split('-').map(Number)
   const value = new Date(year, month - 1, date)
-  if (isToday(value)) return 'Hoy'
-  if (isYesterday(value)) return 'Ayer'
-  return format(value, "EEEE d 'de' MMMM", { locale: es })
+  if (isToday(value)) return t('day.today')
+  if (isYesterday(value)) return t('day.yesterday')
+  return new Intl.DateTimeFormat(intlLocale(getLanguage()), {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(value)
+}
+
+function timeOf(timestamp: string): string {
+  return new Intl.DateTimeFormat(intlLocale(getLanguage()), {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(timestamp))
 }
 
 export function MovementList({ movements, showProduct }: MovementListProps) {
+  const { t } = useI18n()
   return (
     <div className="space-y-4">
       {groupMovementsByDay(movements).map((group) => (
@@ -51,26 +63,29 @@ export function MovementList({ movements, showProduct }: MovementListProps) {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-medium break-words">
-                    {showProduct ? movement.productName : MOVEMENT_KIND_LABELS[movement.kind]}
+                    {showProduct ? movement.productName : movementKindLabel(movement.kind)}
                   </span>
                   <span className="block text-sm text-slate-600 dark:text-slate-400">
                     {[
-                      showProduct ? MOVEMENT_KIND_LABELS[movement.kind] : null,
-                      format(new Date(movement.createdAt), 'HH:mm'),
+                      showProduct ? movementKindLabel(movement.kind) : null,
+                      timeOf(movement.createdAt),
                       movement.note || null,
                     ]
                       .filter(Boolean)
                       .join(' · ')}
                   </span>
                 </span>
-                <span className="shrink-0 text-right">
-                  <span className="block text-lg leading-tight font-semibold tabular-nums">
+                <span className="shrink-0 text-end">
+                  <span
+                    dir="ltr"
+                    className="block text-lg leading-tight font-semibold tabular-nums"
+                  >
                     {movement.kind === 'adjust'
                       ? formatAmount(movement.resultingQuantity)
                       : `${SIGN[movement.kind]}${formatAmount(movement.amount)}`}
                   </span>
                   <span className="block text-xs text-slate-500 dark:text-slate-400">
-                    quedan {formatAmount(movement.resultingQuantity)}
+                    {t('movement.left', { amount: formatAmount(movement.resultingQuantity) })}
                   </span>
                 </span>
               </li>

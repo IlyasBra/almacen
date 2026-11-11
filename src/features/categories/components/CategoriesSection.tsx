@@ -5,7 +5,7 @@ import { ConfirmDelete } from '@/components/ui/ConfirmDelete'
 import { PencilIcon, TrashIcon } from '@/components/ui/icons'
 import { inputClassName } from '@/components/ui/styles'
 import { useInventory } from '@/features/inventory/useInventory'
-import { pluralize } from '@/lib/text'
+import { useI18n } from '@/i18n'
 
 import { validateCategoryName } from '../model'
 import { type Category } from '../types'
@@ -13,6 +13,7 @@ import { type Category } from '../types'
 /** Create, rename and delete categories. */
 export function CategoriesSection() {
   const { categories, products, createCategory, renameCategory, deleteCategory } = useInventory()
+  const { t, tn } = useI18n()
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ id: string; name: string; error: string | null } | null>(
@@ -47,7 +48,7 @@ export function CategoriesSection() {
   return (
     <section aria-labelledby={`${id}-heading`} className="space-y-3">
       <h3 id={`${id}-heading`} className="text-base font-semibold">
-        Categorías
+        {t('categories.title')}
       </h3>
 
       {deleting ? (
@@ -66,7 +67,7 @@ export function CategoriesSection() {
         <>
           <form onSubmit={(event) => void add(event)} noValidate>
             <label htmlFor={`${id}-new`} className="mb-1.5 block text-sm font-medium">
-              Nueva categoría
+              {t('categories.new')}
             </label>
             <div className="flex gap-2">
               <input
@@ -76,13 +77,13 @@ export function CategoriesSection() {
                   setName(event.target.value)
                 }}
                 autoComplete="off"
-                placeholder="Ej.: Bebidas"
+                placeholder={t('form.newCategoryPlaceholder')}
                 aria-invalid={error !== null}
                 aria-describedby={error ? `${id}-new-error` : undefined}
                 className={inputClassName}
               />
               <Button type="submit" variant="primary">
-                Añadir
+                {t('common.add')}
               </Button>
             </div>
             {error && (
@@ -99,7 +100,7 @@ export function CategoriesSection() {
                   {editing?.id === category.id ? (
                     <form onSubmit={(event) => void saveRename(event)} noValidate>
                       <label htmlFor={`${id}-rename`} className="sr-only">
-                        Nuevo nombre de {category.name}
+                        {t('categories.renameLabel', { name: category.name })}
                       </label>
                       <div className="flex gap-2">
                         <input
@@ -113,14 +114,14 @@ export function CategoriesSection() {
                           className={inputClassName}
                         />
                         <Button type="submit" variant="primary">
-                          Guardar
+                          {t('common.save')}
                         </Button>
                         <Button
                           onClick={() => {
                             setEditing(null)
                           }}
                         >
-                          Cancelar
+                          {t('common.cancel')}
                         </Button>
                       </div>
                       {editing.error && (
@@ -137,7 +138,7 @@ export function CategoriesSection() {
                       <span className="min-w-0 flex-1">
                         <span className="block font-medium break-words">{category.name}</span>
                         <span className="block text-sm text-slate-600 dark:text-slate-400">
-                          {pluralize(count(category.id), 'producto', 'productos')}
+                          {tn('count.products', count(category.id))}
                         </span>
                       </span>
                       <Button
@@ -148,7 +149,9 @@ export function CategoriesSection() {
                         }}
                       >
                         <PencilIcon />
-                        <span className="sr-only">Renombrar {category.name}</span>
+                        <span className="sr-only">
+                          {t('categories.rename', { name: category.name })}
+                        </span>
                       </Button>
                       <Button
                         variant="ghost"
@@ -159,7 +162,9 @@ export function CategoriesSection() {
                         }}
                       >
                         <TrashIcon />
-                        <span className="sr-only">Borrar {category.name}</span>
+                        <span className="sr-only">
+                          {t('categories.deleteLabel', { name: category.name })}
+                        </span>
                       </Button>
                     </div>
                   )}
@@ -167,13 +172,9 @@ export function CategoriesSection() {
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              Todavía no hay categorías. Crea las que uses: Bebidas, Limpieza, Alimentación…
-            </p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">{t('categories.empty')}</p>
           )}
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Al borrar una categoría, sus productos se quedan sin categoría; no se borra ninguno.
-          </p>
+          <p className="text-sm text-slate-600 dark:text-slate-400">{t('categories.hint')}</p>
         </>
       )}
     </section>

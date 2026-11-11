@@ -33,13 +33,13 @@ export class ScannerError extends Error {
   }
 }
 
-export const SCANNER_ERROR_MESSAGES: Record<ScannerErrorKind, string> = {
-  denied:
-    'No hay permiso para usar la cámara. Actívalo en los ajustes del navegador para esta web y vuelve a intentarlo.',
-  'no-camera': 'No se ha encontrado ninguna cámara en este dispositivo.',
-  unsupported: 'Este navegador no puede usar la cámara en directo.',
-  failed: 'No se ha podido abrir la cámara. Ciérrala en otras apps y vuelve a intentarlo.',
-}
+/** Message shown for each kind of camera problem. */
+export const SCANNER_ERROR_KEYS = {
+  denied: 'scanner.denied',
+  'no-camera': 'scanner.noCamera',
+  unsupported: 'scanner.unsupported',
+  failed: 'scanner.failed',
+} as const satisfies Record<ScannerErrorKind, string>
 
 /** The native detector, if this browser has one that reads our formats. */
 async function createNativeDetector(): Promise<BarcodeDetector | null> {

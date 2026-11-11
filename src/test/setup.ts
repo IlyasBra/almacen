@@ -3,7 +3,9 @@ import '@testing-library/jest-dom/vitest'
 import 'fake-indexeddb/auto'
 
 import { cleanup } from '@testing-library/react'
-import { afterEach } from 'vitest'
+import { afterEach, beforeEach } from 'vitest'
+
+import { setLanguagePreference } from '@/i18n'
 
 // jsdom does not implement modal <dialog>. Minimal stand-in: toggle the
 // `open` attribute and fire "close" like a real browser does.
@@ -32,6 +34,11 @@ if (typeof window.matchMedia !== 'function') {
       }) as unknown as MediaQueryList,
   })
 }
+
+// The tests assert on Spanish texts, whatever the language of the machine running them.
+beforeEach(() => {
+  setLanguagePreference('es', { persist: false })
+})
 
 afterEach(() => {
   cleanup()

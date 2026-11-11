@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react'
 
+import { useI18n } from '@/i18n'
 import { cn } from '@/lib/cn'
 
 import { Button } from './Button'
@@ -13,6 +14,7 @@ interface NoticeProps {
 
 /** Inline message. Errors use role="alert" so screen readers announce them. */
 export function Notice({ tone, children, onDismiss }: NoticeProps) {
+  const { t } = useI18n()
   return (
     <div
       role={tone === 'error' ? 'alert' : 'status'}
@@ -25,9 +27,9 @@ export function Notice({ tone, children, onDismiss }: NoticeProps) {
     >
       <div className="flex-1 py-0.5">{children}</div>
       {onDismiss && (
-        <Button variant="ghost" size="sm" onClick={onDismiss} className="-my-1 -mr-2">
+        <Button variant="ghost" size="sm" onClick={onDismiss} className="-my-1 -me-2">
           <CloseIcon className="size-4" />
-          <span className="sr-only">Cerrar aviso</span>
+          <span className="sr-only">{t('notice.dismiss')}</span>
         </Button>
       )}
     </div>

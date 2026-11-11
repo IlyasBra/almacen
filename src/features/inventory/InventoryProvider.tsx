@@ -7,6 +7,7 @@ import { type MovementInput } from '@/features/movements/types'
 import { clampQuantity, productModel, roundQuantity } from '@/features/products/model'
 import { type Product, type ProductInput } from '@/features/products/types'
 import { type StoreErrorMessages, useRepositoryStore } from '@/hooks/useRepositoryStore'
+import { useI18n } from '@/i18n'
 
 import {
   InventoryContext,
@@ -14,25 +15,6 @@ import {
   type InventorySnapshot,
   type PhotoChange,
 } from './InventoryContext'
-
-const PRODUCT_MESSAGES: StoreErrorMessages = {
-  create: 'No se ha podido guardar el producto.',
-  update: 'No se ha podido guardar el cambio.',
-  remove: 'No se ha podido borrar el producto.',
-  replace: 'No se han podido restaurar los productos.',
-}
-const MOVEMENT_MESSAGES: StoreErrorMessages = {
-  create: 'No se ha podido apuntar el movimiento.',
-  update: 'No se ha podido apuntar el movimiento.',
-  remove: 'No se ha podido borrar el movimiento.',
-  replace: 'No se han podido restaurar los movimientos.',
-}
-const CATEGORY_MESSAGES: StoreErrorMessages = {
-  create: 'No se ha podido crear la categoría.',
-  update: 'No se ha podido renombrar la categoría.',
-  remove: 'No se ha podido borrar la categoría.',
-  replace: 'No se han podido restaurar las categorías.',
-}
 
 interface InventoryProviderProps {
   repositories: Repositories
@@ -45,6 +27,34 @@ interface InventoryProviderProps {
  * category clears it from its products, and photos follow their product.
  */
 export function InventoryProvider({ repositories, children }: InventoryProviderProps) {
+  const { t } = useI18n()
+  const productMessages = useMemo<StoreErrorMessages>(
+    () => ({
+      create: t('store.product.create'),
+      update: t('store.product.update'),
+      remove: t('store.product.remove'),
+      replace: t('store.product.replace'),
+    }),
+    [t],
+  )
+  const movementMessages = useMemo<StoreErrorMessages>(
+    () => ({
+      create: t('store.movement.create'),
+      update: t('store.movement.create'),
+      remove: t('store.movement.create'),
+      replace: t('store.movement.replace'),
+    }),
+    [t],
+  )
+  const categoryMessages = useMemo<StoreErrorMessages>(
+    () => ({
+      create: t('store.category.create'),
+      update: t('store.category.update'),
+      remove: t('store.category.remove'),
+      replace: t('store.category.replace'),
+    }),
+    [t],
+  )
   const {
     items: productItems,
     status: productStatus,
@@ -54,7 +64,7 @@ export function InventoryProvider({ repositories, children }: InventoryProviderP
     update: patchProduct,
     remove: removeProduct,
     replaceAll: replaceProducts,
-  } = useRepositoryStore(repositories.products, productModel, PRODUCT_MESSAGES)
+  } = useRepositoryStore(repositories.products, productModel, productMessages)
   const {
     items: movementItems,
     status: movementStatus,
@@ -62,7 +72,7 @@ export function InventoryProvider({ repositories, children }: InventoryProviderP
     dismissError: dismissMovementError,
     create: logMovement,
     replaceAll: replaceMovements,
-  } = useRepositoryStore(repositories.movements, movementModel, MOVEMENT_MESSAGES)
+  } = useRepositoryStore(repositories.movements, movementModel, movementMessages)
   const {
     items: categoryItems,
     status: categoryStatus,
@@ -72,7 +82,7 @@ export function InventoryProvider({ repositories, children }: InventoryProviderP
     update: patchCategory,
     remove: removeCategory,
     replaceAll: replaceCategories,
-  } = useRepositoryStore(repositories.categories, categoryModel, CATEGORY_MESSAGES)
+  } = useRepositoryStore(repositories.categories, categoryModel, categoryMessages)
   const photos = repositories.photos
   const [photoError, setPhotoError] = useState<string | null>(null)
 
@@ -90,7 +100,7 @@ export function InventoryProvider({ repositories, children }: InventoryProviderP
           photoId = await photos.add(photo)
         } catch (error) {
           console.error(error)
-          setPhotoError('No se ha podido guardar la foto.')
+          setPhotoError(t('store.photo.save'))
           return null
         }
       }
@@ -100,11 +110,11 @@ export function InventoryProvider({ repositories, children }: InventoryProviderP
         return null
       }
       if (product.quantity > 0) {
-        await logMovement(movementFor(product, 'new', product.quantity, 'Producto nuevo'))
+        await logMovement(movementFor(product, 'new', product.quantity, ''))
       }
       return product
     },
-    [photos, insertProduct, logMovement],
+    [photos, insertProduct, logMovement, t],
   )
 
   const updateProduct = useCallback(
@@ -119,7 +129,7 @@ export function InventoryProvider({ repositories, children }: InventoryProviderP
           photoId = await photos.add(photo.blob)
         } catch (error) {
           console.error(error)
-          setPhotoError('No se ha podido guardar la foto.')
+          setPhotoError(t('store.photo.save'))
           return false
         }
       }
@@ -139,13 +149,13 @@ export function InventoryProvider({ repositories, children }: InventoryProviderP
             { ...before, name: input.name.trim(), unit: input.unit, quantity: after },
             'adjust',
             Math.abs(roundQuantity(after - before.quantity)),
-            `Antes había ${String(before.quantity).replace('.', ',')}`,
+            '',
           ),
         )
       }
       return true
     },
-    [photos, patchProduct, logMovement],
+    [photos, patchProduct, logMovement, t],
   )
 
   const deleteProduct = useCallback(
@@ -208,7 +218,7 @@ export function InventoryProvider({ repositories, children }: InventoryProviderP
         await photos.replaceAll(snapshot.photos)
       } catch (error) {
         console.error(error)
-        setPhotoError('No se han podido restaurar las fotos.')
+        setPhotoError(t('store.photo.replace'))
         return false
       }
       return (
@@ -217,7 +227,7 @@ export function InventoryProvider({ repositories, children }: InventoryProviderP
         (await replaceMovements(snapshot.movements))
       )
     },
-    [photos, replaceCategories, replaceProducts, replaceMovements],
+    [photos, replaceCategories, replaceProducts, replaceMovements, t],
   )
 
   const getPhoto = useCallback((id: string) => photos.get(id), [photos])
@@ -240,7 +250,7 @@ export function InventoryProvider({ repositories, children }: InventoryProviderP
 
   const value = useMemo<InventoryContextValue>(
     () => ({
-      products: productItems.toSorted((a, b) => a.name.localeCompare(b.name, 'es')),
+      products: productItems.toSorted((a, b) => a.name.localeCompare(b.name)),
       movements: sortMovements(movementItems),
       categories: sortCategories(categoryItems),
       status,

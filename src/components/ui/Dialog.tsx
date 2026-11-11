@@ -1,5 +1,7 @@
 import { type ReactNode, useEffect, useId, useRef } from 'react'
 
+import { useI18n } from '@/i18n'
+
 import { Button } from './Button'
 import { CloseIcon } from './icons'
 
@@ -16,6 +18,7 @@ interface DialogProps {
  * readers. On phones it is shown as a bottom sheet.
  */
 export function Dialog({ open, onClose, title, children }: DialogProps) {
+  const { t } = useI18n()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const titleId = useId()
 
@@ -44,9 +47,9 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
           <h2 id={titleId} className="text-lg font-semibold">
             {title}
           </h2>
-          <Button variant="ghost" size="icon" onClick={onClose} className="-mr-2">
+          <Button variant="ghost" size="icon" onClick={onClose} className="-me-2">
             <CloseIcon />
-            <span className="sr-only">Cerrar</span>
+            <span className="sr-only">{t('common.close')}</span>
           </Button>
         </div>
         {children}

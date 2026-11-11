@@ -3,6 +3,7 @@ import { type InventorySnapshot } from '@/features/inventory/InventoryContext'
 import { MOVEMENT_KINDS, type Movement } from '@/features/movements/types'
 import { type Photo } from '@/features/photos/photoStore'
 import { isUnit } from '@/features/products/model'
+import { t } from '@/i18n'
 import { type Product } from '@/features/products/types'
 
 export const BACKUP_APP = 'almacen'
@@ -65,14 +66,14 @@ export function parseBackup(text: string): ParseBackupResult {
   try {
     data = JSON.parse(text)
   } catch {
-    return fail('El archivo no es un JSON válido.')
+    return fail(t('backup.invalidJson'))
   }
 
   if (!isRecord(data) || data.app !== BACKUP_APP) {
-    return fail('Este archivo no es una copia de seguridad de Almacén.')
+    return fail(t('backup.notBackup'))
   }
   if (typeof data.version !== 'number' || data.version > BACKUP_VERSION) {
-    return fail('La copia es de una versión más nueva de la app. Actualízala e inténtalo de nuevo.')
+    return fail(t('backup.newerVersion'))
   }
   if (
     !isTimestamp(data.exportedAt) ||
@@ -81,23 +82,20 @@ export function parseBackup(text: string): ParseBackupResult {
     !Array.isArray(data.categories) ||
     !Array.isArray(data.photos)
   ) {
-    return fail('Faltan datos en la copia.')
+    return fail(t('backup.missingData'))
   }
 
   const categories = (data.categories as unknown[]).filter(isCategory)
-  if (categories.length !== data.categories.length)
-    return fail('La copia contiene categorías con datos no válidos.')
+  if (categories.length !== data.categories.length) return fail(t('backup.badCategories'))
   const products = (data.products as unknown[]).filter(isProduct)
-  if (products.length !== data.products.length)
-    return fail('La copia contiene productos con datos no válidos.')
+  if (products.length !== data.products.length) return fail(t('backup.badProducts'))
   const movements = (data.movements as unknown[]).filter(isMovement)
-  if (movements.length !== data.movements.length)
-    return fail('La copia contiene movimientos con datos no válidos.')
+  if (movements.length !== data.movements.length) return fail(t('backup.badMovements'))
 
   const photos: Photo[] = []
   for (const item of data.photos as unknown[]) {
     const photo = readPhoto(item)
-    if (!photo) return fail('La copia contiene fotos dañadas.')
+    if (!photo) return fail(t('backup.badPhotos'))
     photos.push(photo)
   }
 
@@ -107,7 +105,7 @@ export function parseBackup(text: string): ParseBackupResult {
     hasDuplicateIds(categories) ||
     hasDuplicateIds(photos)
   ) {
-    return fail('La copia contiene elementos repetidos.')
+    return fail(t('backup.duplicates'))
   }
   const categoryIds = new Set(categories.map((category) => category.id))
   const photoIds = new Set(photos.map((photo) => photo.id))
@@ -118,7 +116,7 @@ export function parseBackup(text: string): ParseBackupResult {
         (product.photoId !== null && !photoIds.has(product.photoId)),
     )
   ) {
-    return fail('La copia contiene productos con categorías o fotos que faltan.')
+    return fail(t('backup.missingReferences'))
   }
 
   return {

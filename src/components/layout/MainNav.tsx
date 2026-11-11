@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react'
 
+import { useI18n } from '@/i18n'
 import { cn } from '@/lib/cn'
 
 export interface NavItem {
@@ -20,9 +21,10 @@ interface MainNavProps {
  * thumb reaches; a tab bar under the header from md up.
  */
 export function MainNav({ items, currentId }: MainNavProps) {
+  const { t } = useI18n()
   return (
     <nav
-      aria-label="Secciones"
+      aria-label={t('nav.label')}
       className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:sticky md:top-[calc(3.75rem+env(safe-area-inset-top))] md:bottom-auto md:border-t-0 md:border-b md:pb-0 dark:border-slate-800 dark:bg-slate-900/95"
     >
       <ul className="mx-auto flex max-w-2xl md:gap-2 md:px-4">

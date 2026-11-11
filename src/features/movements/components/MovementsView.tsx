@@ -1,5 +1,6 @@
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useInventory } from '@/features/inventory/useInventory'
+import { useI18n } from '@/i18n'
 
 import { MovementList } from './MovementList'
 
@@ -8,13 +9,11 @@ const SHOWN_MOVEMENTS = 300
 
 export function MovementsView() {
   const { movements } = useInventory()
+  const { t } = useI18n()
 
   if (movements.length === 0) {
     return (
-      <EmptyState
-        title="Sin movimientos"
-        description="Cuando sumes o restes stock, aparecerá aquí con la fecha y la hora."
-      />
+      <EmptyState title={t('movements.emptyTitle')} description={t('movements.emptyDescription')} />
     )
   }
 
