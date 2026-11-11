@@ -1,30 +1,81 @@
-# Almacén de la tienda
+# Almacén
 
-App para el móvil que controla el stock del almacén de la tienda: qué hay, cuánto queda y qué hay que reponer.
+App web para controlar el stock del almacén de la tienda: qué hay, cuánto queda y qué hay que reponer. Funciona sin conexión, guarda los datos en el propio móvil y se instala en la pantalla de inicio como PWA.
 
-## Qué hace
+**App:** https://ilyasbra.github.io/almacen/
 
-- **Inventario** con buscador, filtros por categoría y un color por producto: bien, queda poco o agotado.
-- **Ficha de producto** con foto, código de barras, ubicación y stock mínimo. Botones − / + para restar o sumar, y un campo para cantidades mayores.
-- **Escáner de códigos de barras por foto** con modo continuo. Si el producto existe, se abre su ficha. Si no, lleva a crearlo con el código ya puesto.
-- **Categorías** que puedes crear, renombrar y eliminar.
-- **Por reponer**: lista de lo agotado o por debajo del mínimo, con un botón para copiarla y pegarla en WhatsApp.
-- **Movimientos**: historial de entradas, salidas y ajustes con fecha y hora.
+## Funcionalidades
 
-## Cómo funciona
+- **Inventario** con buscador (sin distinguir mayúsculas ni acentos), filtros por categoría y por estado: bien, queda poco o agotado.
+- **Lector de códigos de barras en vivo**: apuntas con la cámara, lee el código y se cierra solo. Si el producto existe, abre su ficha; si no, lleva a crearlo con el código ya puesto o permite asignarlo a un producto que ya existe.
+- **Modo escaneo continuo**: tras cada producto, «Escanear siguiente» vuelve a abrir la cámara.
+- **Ficha de producto** con foto, botones grandes − / + (los toques seguidos se guardan como un solo movimiento), entradas y salidas de otras cantidades, e historial.
+- **Fotos** hechas con la cámara o elegidas de la galería, reducidas antes de guardarlas.
+- **Categorías** propias: crear, renombrar y borrar (sus productos se quedan sin categoría).
+- **Reponer**: agotados y por debajo del aviso, con cantidad sugerida y la lista lista para copiar o enviar por WhatsApp.
+- **Movimientos**: historial de entradas, salidas, ajustes y altas, por días.
+- **Copia de seguridad** en JSON con fotos incluidas, validada al importar.
+- **Modo oscuro** (sistema, claro u oscuro, sin parpadeo al cargar).
+- **PWA**: instalable, funciona sin conexión y se actualiza sola.
 
-Es un único archivo, `index.html`, publicado como artifact en Claude (claude.ai). Los datos y las fotos se guardan con los servicios de Claude, a los que la página accede con `window.claude.use(...)`:
+## Tecnología
 
-| Servicio | Uso |
-| --- | --- |
-| `db` | Colecciones `productos` y `movimientos`, y el documento `config/categorias` |
-| `assets` | Fotos de los productos (se reducen a 1200 px antes de subirlas) |
-| `user` | Identificar a quien abre la app |
+Misma base que [Diario](https://github.com/IlyasBra/diario):
 
-Solo la propietaria o el propietario de la app puede leer y escribir los datos.
+| Pieza   | Elección                     | Motivo                                                                     |
+| ------- | ---------------------------- | -------------------------------------------------------------------------- |
+| UI      | React 19 + TypeScript        | Tipado estricto, sin `any`.                                                |
+| Build   | Vite                         | Arranque rápido y buen soporte de PWA.                                     |
+| Estilos | Tailwind CSS v4              | Mobile-first y modo oscuro con clases.                                     |
+| Datos   | Dexie (IndexedDB)            | Sin backend; las fotos se guardan como Blob en su propia tabla.            |
+| Lector  | BarcodeDetector + ZXing      | El detector nativo donde existe (Android); ZXing en el resto (iPhone).     |
+| PWA     | vite-plugin-pwa (Workbox)    | Caché offline y actualización automática.                                  |
+| Fechas  | date-fns                     | Días y horas en español.                                                   |
+| Tests   | Vitest + Testing Library     | Pruebas de comportamiento, no de implementación.                           |
+| Calidad | ESLint (+jsx-a11y), Prettier | Reglas de accesibilidad en el lint.                                        |
+| CI/CD   | GitHub Actions + Pages       | Formato, lint, tipos, tests y build en cada push; despliegue desde `main`. |
 
-**Importante:** si abres este `index.html` fuera de Claude (por ejemplo, con GitHub Pages), la página carga pero no puede leer ni guardar datos. Este repositorio es una copia del código; la app se usa desde su enlace de Claude.
+## Ejecutar en local
 
-## Lectura de códigos de barras
+Requisitos: Node.js 22 o superior.
 
-Usa la API nativa `BarcodeDetector` cuando el navegador la tiene (Chrome en Android). Si no, carga [ZXing](https://github.com/zxing-js/library) 0.21.3 desde unpkg. Lee EAN-13, EAN-8, UPC, Code 128, Code 39, Code 93, ITF, Codabar, QR y Data Matrix.
+```bash
+npm install
+npm run dev
+```
+
+Abre http://localhost:5173. La cámara solo funciona en `localhost` o con HTTPS.
+
+## Scripts
+
+| Comando                | Qué hace                              |
+| ---------------------- | ------------------------------------- |
+| `npm run dev`          | Servidor de desarrollo                |
+| `npm run build`        | Typecheck y build de producción       |
+| `npm run preview`      | Sirve el build (usa `VITE_BASE_PATH`) |
+| `npm run typecheck`    | Comprueba los tipos                   |
+| `npm run lint`         | ESLint sin avisos permitidos          |
+| `npm run format:check` | Comprueba el formato con Prettier     |
+| `npm test`             | Ejecuta los tests                     |
+
+## Estructura
+
+```
+src/
+  app/          pantalla principal y rutas
+  components/   UI reutilizable (botones, diálogos, iconos)
+  db/           esquema Dexie y elección de repositorios
+  features/     products, movements, categories, photos, scanner,
+                inventory (estado), restock, backup, settings
+  lib/          utilidades y capa de repositorios
+```
+
+## Decisiones técnicas
+
+- **Patrón repositorio**, como en Diario: la interfaz `Repository` separa la app del almacenamiento, con implementaciones en IndexedDB y en memoria que pasan los mismos tests de contrato.
+- **Cada cambio de stock deja un movimiento.** `InventoryProvider` es el único sitio que cambia cantidades, y siempre apunta el movimiento con la cantidad resultante.
+- **Toques agrupados.** Pulsar + cinco veces seguidas guarda un único «+5» tras una pausa corta, en lugar de cinco movimientos.
+- **Fotos aparte.** Se reducen a 1200 px en JPEG y se guardan en su propia tabla; los productos solo guardan el id, así la lista nunca carga imágenes enteras.
+- **Lector en vivo.** La cámara se abre con `getUserMedia`; ZXing se carga solo cuando hace falta para no engordar el arranque. Si no hay cámara o permiso, se puede leer el código de una foto o escribirlo.
+- **Copia de seguridad versionada** (`BACKUP_VERSION`), con las fotos en base64. Todo se valida antes de tocar la base de datos, y se restaura en una sola operación por tabla. La app pide `storage.persist()` para que el navegador no borre los datos.
+- **Accesibilidad.** Diálogos nativos `<dialog>`, etiquetas en todos los controles, objetivos táctiles de 44 px y estado de stock con texto, no solo con color.
