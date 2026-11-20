@@ -233,6 +233,9 @@ export const de: Messages = {
   'scanner.unsupported': 'Dieser Browser kann die Live-Kamera nicht nutzen.',
   'scanner.failed':
     'Die Kamera konnte nicht geöffnet werden. Schließe sie in anderen Apps und versuche es erneut.',
+  'scanner.glareTip': 'Bei Spiegelungen das Produkt oder das Handy leicht neigen.',
+  'scanner.torchOn': 'Taschenlampe einschalten',
+  'scanner.torchOff': 'Taschenlampe ausschalten',
   'scanner.takePhoto': 'Foto aufnehmen',
   'scanner.typeCode': 'Code eintippen',
   'scanner.codeLabel': 'Barcode',

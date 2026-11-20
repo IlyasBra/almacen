@@ -244,3 +244,12 @@ export function CopyIcon(props: IconProps) {
     </Icon>
   )
 }
+
+export function FlashlightIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M7 3h10v4l-3 4v10h-4V11L7 7Z" />
+      <path d="M12 14v2" />
+    </Icon>
+  )
+}

@@ -1,7 +1,7 @@
 import { type ChangeEvent, type SubmitEvent, useEffect, useId, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/Button'
-import { CameraIcon, CloseIcon } from '@/components/ui/icons'
+import { CameraIcon, CloseIcon, FlashlightIcon } from '@/components/ui/icons'
 import { inputClassName } from '@/components/ui/styles'
 import { type MessageKey, useI18n } from '@/i18n'
 
@@ -36,6 +36,9 @@ export function ScannerDialog({ open, onClose, onDetected }: ScannerDialogProps)
   const videoRef = useRef<HTMLVideoElement>(null)
   const [state, setState] = useState<ScanState>({ kind: 'starting' })
   const [typing, setTyping] = useState(false)
+  const [torch, setTorch] = useState<{ on: boolean; set: (on: boolean) => Promise<void> } | null>(
+    null,
+  )
   const { t } = useI18n()
   const titleId = useId()
   const codeId = useId()
@@ -60,6 +63,7 @@ export function ScannerDialog({ open, onClose, onDetected }: ScannerDialogProps)
     let cancelled = false
     setState({ kind: 'starting' })
     setTyping(false)
+    setTorch(null)
 
     startLiveScanner(video, (code) => {
       if ('vibrate' in navigator) navigator.vibrate(80)
@@ -70,6 +74,7 @@ export function ScannerDialog({ open, onClose, onDetected }: ScannerDialogProps)
         else {
           handle = started
           setState({ kind: 'scanning' })
+          if (started.setTorch) setTorch({ on: false, set: started.setTorch })
         }
       },
       (error: unknown) => {
@@ -144,12 +149,38 @@ export function ScannerDialog({ open, onClose, onDetected }: ScannerDialogProps)
               </div>
             </div>
           )}
+          {torch && state.kind === 'scanning' && (
+            <button
+              type="button"
+              aria-pressed={torch.on}
+              onClick={() => {
+                const next = !torch.on
+                torch.set(next).then(
+                  () => {
+                    setTorch({ ...torch, on: next })
+                  },
+                  () => undefined,
+                )
+              }}
+              className="absolute end-4 top-4 grid size-12 place-items-center rounded-full bg-black/60 text-white aria-pressed:bg-amber-400 aria-pressed:text-black"
+            >
+              <FlashlightIcon />
+              <span className="sr-only">
+                {torch.on ? t('scanner.torchOff') : t('scanner.torchOn')}
+              </span>
+            </button>
+          )}
           <p
             role="status"
             className="absolute inset-x-4 bottom-4 rounded-xl bg-black/60 px-4 py-3 text-center text-sm"
           >
             {state.kind === 'starting' && t('scanner.starting')}
-            {state.kind === 'scanning' && t('scanner.scanning')}
+            {state.kind === 'scanning' && (
+              <>
+                {t('scanner.scanning')}
+                <span className="mt-1 block text-xs text-white/80">{t('scanner.glareTip')}</span>
+              </>
+            )}
             {state.kind === 'reading-photo' && t('scanner.readingPhoto')}
             {state.kind === 'error' && t(state.message)}
           </p>

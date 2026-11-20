@@ -249,6 +249,9 @@ export const es = {
   'scanner.unsupported': 'Este navegador no puede usar la cámara en directo.',
   'scanner.failed':
     'No se ha podido abrir la cámara. Ciérrala en otras apps y vuelve a intentarlo.',
+  'scanner.glareTip': 'Si hay reflejos, inclina un poco el producto o el móvil.',
+  'scanner.torchOn': 'Encender linterna',
+  'scanner.torchOff': 'Apagar linterna',
   'scanner.takePhoto': 'Hacer foto',
   'scanner.typeCode': 'Escribir código',
   'scanner.codeLabel': 'Código de barras',

@@ -231,6 +231,9 @@ export const it: Messages = {
   'scanner.unsupported': 'Questo browser non può usare la fotocamera dal vivo.',
   'scanner.failed':
     'Non è stato possibile aprire la fotocamera. Chiudila nelle altre app e riprova.',
+  'scanner.glareTip': 'Se ci sono riflessi, inclina leggermente il prodotto o il telefono.',
+  'scanner.torchOn': 'Accendi la torcia',
+  'scanner.torchOff': 'Spegni la torcia',
   'scanner.takePhoto': 'Scatta foto',
   'scanner.typeCode': 'Scrivi il codice',
   'scanner.codeLabel': 'Codice a barre',

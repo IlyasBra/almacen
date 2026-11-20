@@ -62,4 +62,11 @@ describe('product selectors', () => {
     expect(findByBarcode(all, ' 111 ')).toBe(agua)
     expect(findByBarcode(all, '')).toBeUndefined()
   })
+
+  it('finds a product whether its code was stored with 12 or 13 digits', () => {
+    const old = makeProduct({ name: 'Leche', barcode: '012345678905' })
+    expect(findByBarcode([old], '0012345678905')).toBe(old)
+    const current = makeProduct({ name: 'Leche', barcode: '0012345678905' })
+    expect(findByBarcode([current], '012345678905')).toBe(current)
+  })
 })

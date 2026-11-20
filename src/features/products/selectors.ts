@@ -79,7 +79,16 @@ export function restockText(products: readonly Product[], format: (n: number) =>
   return [t('restock.textTitle'), ...lines].join('\n')
 }
 
+/**
+ * Same product code written two ways: a 12-digit UPC-A and the EAN-13 that
+ * is the same digits with a 0 in front. Older scans may have stored either.
+ */
+function sameBarcode(a: string, b: string): boolean {
+  const pad = (code: string) => (/^\d{12}$/.test(code) ? `0${code}` : code)
+  return pad(a.trim()) === pad(b.trim())
+}
+
 export function findByBarcode(products: readonly Product[], barcode: string): Product | undefined {
   const code = barcode.trim()
-  return code ? products.find((product) => product.barcode === code) : undefined
+  return code ? products.find((product) => sameBarcode(product.barcode, code)) : undefined
 }
