@@ -8,6 +8,7 @@ import {
   normalizeBarcode,
   NATIVE_METHOD,
   ReadConfirmer,
+  SCAN_PLAN,
 } from './frameDecoder'
 
 // EAN-13 encoding tables, to draw real barcodes for the tests.
@@ -109,11 +110,15 @@ describe('frame decoder', () => {
 })
 
 describe('read confirmer', () => {
-  it('needs the flat reading and another way to agree', () => {
+  it('accepts the flat reading when another way agrees', () => {
     const confirmer = new ReadConfirmer()
     expect(confirmer.add('111', 'flat', 0)).toBeNull()
-    expect(confirmer.add('111', 'flat-whole', 100)).toBeNull()
-    expect(confirmer.add('111', 'sharp', 200)).toBe('111')
+    expect(confirmer.add('111', 'sharp', 100)).toBe('111')
+  })
+
+  it('does not trust a single flat reading', () => {
+    const confirmer = new ReadConfirmer()
+    expect(confirmer.add('111', 'flat', 0)).toBeNull()
   })
 
   it('does not trust two sharpened readings while another code is also being read', () => {
@@ -137,5 +142,30 @@ describe('read confirmer', () => {
     expect(confirmer.add('222', NATIVE_METHOD, 100)).toBe('222')
     expect(confirmer.add('333', 'flat', 0)).toBeNull()
     expect(confirmer.add('333', 'sharp', 5000)).toBeNull()
+  })
+
+  it('trusts the flat reading when it sees the same code twice in different places', () => {
+    const confirmer = new ReadConfirmer()
+    expect(confirmer.add('444', 'flat', 0)).toBeNull()
+    expect(confirmer.add('444', 'flat-whole', 300)).toBe('444')
+  })
+
+  it('does not trust two flat readings if flat has also read another code', () => {
+    const confirmer = new ReadConfirmer()
+    confirmer.add('555', 'flat', 0)
+    confirmer.add('444', 'flat', 100)
+    expect(confirmer.add('444', 'flat', 200)).toBeNull()
+  })
+})
+
+describe('SCAN_PLAN', () => {
+  it('stays inside the frame and leads with the flat reading', () => {
+    expect(SCAN_PLAN[0]?.preparation).toBe('flat')
+    for (const { view } of SCAN_PLAN) {
+      expect(view.x).toBeGreaterThanOrEqual(0)
+      expect(view.y).toBeGreaterThanOrEqual(0)
+      expect(view.x + view.w).toBeLessThanOrEqual(1)
+      expect(view.y + view.h).toBeLessThanOrEqual(1)
+    }
   })
 })

@@ -1,3 +1,5 @@
+import type { ScanView } from './frameDecoder'
+
 /** Formats found on shop products and labels. */
 export const BARCODE_FORMATS = [
   'ean_13',
@@ -95,22 +97,19 @@ async function tuneCamera(track: MediaStreamTrack): Promise<CameraCapabilities> 
   return capabilities
 }
 
-/**
- * The part of the frame to read: the middle band where the aiming box is.
- * Reading less of the frame is faster and leaves out reflections elsewhere.
- */
-function cropBand(
+/** Draws one part of the frame on `canvas` and returns its size. */
+function cropView(
   video: HTMLVideoElement,
   canvas: HTMLCanvasElement,
-  full: boolean,
+  view: ScanView,
 ): { width: number; height: number } | null {
   const sourceWidth = video.videoWidth
   const sourceHeight = video.videoHeight
   if (!sourceWidth || !sourceHeight) return null
-  const width = full ? sourceWidth : Math.round(sourceWidth * 0.9)
-  const height = full ? sourceHeight : Math.round(sourceHeight * 0.45)
-  const left = Math.round((sourceWidth - width) / 2)
-  const top = Math.round((sourceHeight - height) / 2)
+  const left = Math.round(sourceWidth * view.x)
+  const top = Math.round(sourceHeight * view.y)
+  const width = Math.round(sourceWidth * view.w)
+  const height = Math.round(sourceHeight * view.h)
   canvas.width = width
   canvas.height = height
   const context = canvas.getContext('2d', { willReadFrequently: true })
@@ -175,7 +174,6 @@ export async function startLiveScanner(
     ])
     const confirmer = new decoder.ReadConfirmer()
     const canvas = document.createElement('canvas')
-    const preparations = Object.keys(decoder.PREPARATIONS) as (keyof typeof decoder.PREPARATIONS)[]
     let frame = 0
 
     /** One way of reading per frame, in turn: [code, method] or null. */
@@ -188,10 +186,11 @@ export async function startLiveScanner(
           : null
       }
       const turn = detector ? step >> 1 : step
-      // Every fifth attempt reads the whole picture, in case the code is off-centre.
-      const whole = turn % 5 === 4
-      const name = preparations[turn % preparations.length] ?? 'flat'
-      const size = cropBand(video, canvas, whole)
+      const plan = decoder.SCAN_PLAN[turn % decoder.SCAN_PLAN.length]
+      if (!plan) return null
+      const name = plan.preparation
+      const whole = plan.whole
+      const size = cropView(video, canvas, plan.view)
       const context = canvas.getContext('2d', { willReadFrequently: true })
       if (!size || !context) return null
       const pixels = context.getImageData(0, 0, size.width, size.height).data

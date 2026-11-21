@@ -190,6 +190,48 @@ export const PREPARATIONS = {
 } as const
 export type Preparation = keyof typeof PREPARATIONS
 
+/** A part of the frame, as fractions of its width and height. */
+export interface ScanView {
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
+const VIEWS = {
+  band: { x: 0.05, y: 0.275, w: 0.9, h: 0.45 },
+  whole: { x: 0, y: 0, w: 1, h: 1 },
+  upper: { x: 0.05, y: 0.1, w: 0.9, h: 0.35 },
+  lower: { x: 0.05, y: 0.55, w: 0.9, h: 0.35 },
+  left: { x: 0, y: 0.25, w: 0.6, h: 0.5 },
+  right: { x: 0.4, y: 0.25, w: 0.6, h: 0.5 },
+} as const satisfies Record<string, ScanView>
+
+export interface ScanStep {
+  preparation: Preparation
+  view: ScanView
+  /** True when the step reads the whole frame (counted as the same way of reading). */
+  whole: boolean
+}
+
+/**
+ * What each attempt looks at and how, in turn. The middle band comes back
+ * often (a code held in the aiming box is read fast); the other parts find a
+ * code that sits off-centre, which a small code on a wrinkled wrapper often is.
+ * "flat" leads because it was the most reliable on reflections and wrinkles.
+ */
+export const SCAN_PLAN: readonly ScanStep[] = [
+  { preparation: 'flat', view: VIEWS.band, whole: false },
+  { preparation: 'flat', view: VIEWS.lower, whole: false },
+  { preparation: 'sharp', view: VIEWS.band, whole: false },
+  { preparation: 'flat', view: VIEWS.upper, whole: false },
+  { preparation: 'flatSharp', view: VIEWS.band, whole: false },
+  { preparation: 'flat', view: VIEWS.whole, whole: true },
+  { preparation: 'flat', view: VIEWS.left, whole: false },
+  { preparation: 'flat', view: VIEWS.right, whole: false },
+  { preparation: 'sharp', view: VIEWS.whole, whole: true },
+]
+
 /** Halves the size until the image fits `maxWidth`: faster to read, and averages noise. */
 export function shrinkToWidth(image: GrayImage, maxWidth: number): GrayImage {
   let current = image
@@ -300,6 +342,8 @@ export function decodeStill(image: GrayImage): string | null {
  * next frame; two ways can even make the same mistake now and then. So a code
  * is accepted only with enough independent evidence within `windowMs`:
  * - the "flat" reading (the most reliable one) and another way agree, or
+ * - "flat" has read it at least twice, in different parts of the picture, and
+ *   no other reading of "flat" has given a different code, or
  * - two different ways agree, the code has been read at least three times and
  *   no other code has been read meanwhile (a sign the picture is unclear), or
  * - the phone's own detector has read it twice.
@@ -322,11 +366,15 @@ export class ReadConfirmer {
     const ways = new Set(same.map((read) => read.method))
     const nativeTwice = same.filter((read) => read.method === NATIVE_METHOD).length >= 2
     const flatAgrees = ways.has('flat') && ways.size >= 2
+    const flatReads = this.reads.filter((read) => read.method === 'flat')
+    const flatTwice =
+      flatReads.filter((read) => read.code === code).length >= 2 &&
+      flatReads.every((read) => read.code === code)
     const conflicting = this.reads.some(
       (read) => read.code !== code && read.method !== NATIVE_METHOD,
     )
     const manyReads = ways.size >= 2 && same.length >= 3 && !conflicting
-    return nativeTwice || flatAgrees || manyReads ? code : null
+    return nativeTwice || flatAgrees || flatTwice || manyReads ? code : null
   }
 }
 
