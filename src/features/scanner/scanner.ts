@@ -1,6 +1,6 @@
 import type { ScanView } from './frameDecoder'
 
-/** Formats found on shop products and labels. */
+/** Linear barcodes found on shop products. QR and similar 2D codes are left out on purpose: they usually link to the maker's website. */
 export const BARCODE_FORMATS = [
   'ean_13',
   'ean_8',
@@ -11,8 +11,6 @@ export const BARCODE_FORMATS = [
   'code_93',
   'itf',
   'codabar',
-  'qr_code',
-  'data_matrix',
 ] as const
 
 /** Pause between two frames: about 10 attempts a second keeps the phone cool. */

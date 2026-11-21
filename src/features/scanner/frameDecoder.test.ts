@@ -158,6 +158,15 @@ describe('read confirmer', () => {
   })
 })
 
+describe('formats', () => {
+  it('reads only linear barcodes, never QR or other 2D codes', async () => {
+    const { BARCODE_FORMATS } = await import('./scanner')
+    expect(BARCODE_FORMATS).not.toContain('qr_code')
+    expect(BARCODE_FORMATS).not.toContain('data_matrix')
+    expect(BARCODE_FORMATS).toContain('ean_13')
+  })
+})
+
 describe('SCAN_PLAN', () => {
   it('stays inside the frame and leads with the flat reading', () => {
     expect(SCAN_PLAN[0]?.preparation).toBe('flat')

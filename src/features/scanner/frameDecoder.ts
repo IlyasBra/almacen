@@ -267,8 +267,6 @@ const ZXING_FORMATS = [
   BarcodeFormat.CODE_93,
   BarcodeFormat.ITF,
   BarcodeFormat.CODABAR,
-  BarcodeFormat.QR_CODE,
-  BarcodeFormat.DATA_MATRIX,
 ]
 
 let reader: MultiFormatReader | null = null
