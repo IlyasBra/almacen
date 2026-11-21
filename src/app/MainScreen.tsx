@@ -20,10 +20,8 @@ import {
   EMPTY_PRODUCT_FILTER,
   findByBarcode,
   type ProductFilter,
-  restockList,
 } from '@/features/products/selectors'
 import { type Product } from '@/features/products/types'
-import { RestockView } from '@/features/restock/RestockView'
 import { ScannerDialog } from '@/features/scanner/ScannerDialog'
 import { SettingsDialog } from '@/features/settings/components/SettingsDialog'
 import { useTheme } from '@/features/settings/useTheme'
@@ -87,11 +85,9 @@ export function MainScreen({ isPersistent }: MainScreenProps) {
     setOpenProductId(product.id)
   }, [])
 
-  const restockCount = restockList(inventory.products).length
-
   return (
     <AppShell
-      nav={<MainNav items={navItems(t, restockCount)} currentId={route} />}
+      nav={<MainNav items={navItems(t)} currentId={route} />}
       headerActions={
         <Button
           variant="ghost"
@@ -124,11 +120,7 @@ export function MainScreen({ isPersistent }: MainScreenProps) {
       {inventory.status === 'ready' && (
         <>
           <h1 className="sr-only">
-            {route === 'inventario'
-              ? t('nav.inventory')
-              : route === 'reponer'
-                ? t('heading.restock')
-                : t('nav.movements')}
+            {route === 'inventario' ? t('nav.inventory') : t('nav.movements')}
           </h1>
           {route === 'inventario' && (
             <InventoryView
@@ -143,7 +135,6 @@ export function MainScreen({ isPersistent }: MainScreenProps) {
               }}
             />
           )}
-          {route === 'reponer' && <RestockView onOpen={openProduct} />}
           {route === 'movimientos' && <MovementsView />}
 
           <div className="fixed end-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex items-center gap-2 md:bottom-8">

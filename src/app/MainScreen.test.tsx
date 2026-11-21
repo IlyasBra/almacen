@@ -155,9 +155,8 @@ describe('MainScreen', () => {
     expect(await repositories.products.list()).toMatchObject([{ barcode: '777' }])
   })
 
-  it('lists products to restock and counts them in the menu', async () => {
-    window.location.hash = '#reponer'
-    renderApp({
+  it('offers the supplier PDF only while looking at low or sold-out products', async () => {
+    const { user } = renderApp({
       products: [
         makeProduct({ name: 'Lejía', quantity: 3, minimum: 6 }),
         makeProduct({ name: 'Arroz', quantity: 0 }),
@@ -165,12 +164,15 @@ describe('MainScreen', () => {
       ],
     })
 
-    const list = await screen.findByRole('list', { name: 'Productos por reponer' })
-    const names = within(list)
-      .getAllByRole('button')
-      .map((button) => button.textContent)
-    expect(names).toEqual([expect.stringMatching(/Arroz/), expect.stringMatching(/Lejía/)])
-    expect(screen.getByRole('link', { name: /Reponer \(2\)/ })).toBeInTheDocument()
+    await screen.findByRole('button', { name: /Agua/ })
+    expect(screen.queryByRole('button', { name: /Enviar PDF/ })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Queda poco/, pressed: false }))
+    expect(screen.getByRole('button', { name: 'Enviar PDF (1)' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Agotado/, pressed: false }))
+    expect(screen.getByRole('button', { name: 'Enviar PDF (1)' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Reponer/ })).not.toBeInTheDocument()
   })
 
   it('filters by category and leaves products without one when it is deleted', async () => {

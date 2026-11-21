@@ -12,7 +12,7 @@ App web para controlar el stock del almacén de la tienda: qué hay, cuánto que
 - **Ficha de producto** con foto, botones grandes − / + (los toques seguidos se guardan como un solo movimiento), entradas y salidas de otras cantidades, e historial.
 - **Fotos** hechas con la cámara o elegidas de la galería, reducidas antes de guardarlas.
 - **Categorías** propias: crear, renombrar y borrar (sus productos se quedan sin categoría).
-- **Reponer**: agotados y por debajo del aviso, con cantidad sugerida y la lista lista para copiar o enviar por WhatsApp.
+- **Pedidos**: en Inventario, al filtrar por «Queda poco» o «Agotado» aparece «Enviar PDF», con la foto, el nombre y el código de barras de cada producto para que el proveedor no se confunda.
 - **Movimientos**: historial de entradas, salidas, ajustes y altas, por días.
 - **Copia de seguridad** en JSON con fotos incluidas, validada al importar.
 - **6 idiomas**: español, inglés, francés, árabe (de derecha a izquierda), italiano y alemán. Usa por defecto el idioma del móvil y se puede cambiar en Ajustes.

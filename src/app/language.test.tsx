@@ -44,7 +44,7 @@ describe('language', () => {
 
     expect(await screen.findByRole('dialog', { name: 'Réglages' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Inventaire' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Réassort (1)' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Mouvements' })).toBeInTheDocument()
     expect(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe('"fr"')
   })
 
