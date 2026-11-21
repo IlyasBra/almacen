@@ -75,25 +75,49 @@ interface CameraCapabilities {
   focusMode?: string[]
 }
 
-/** Continuous focus and a little zoom where the camera supports them. */
-async function tuneCamera(track: MediaStreamTrack): Promise<CameraCapabilities> {
+interface CameraTuning {
+  capabilities: CameraCapabilities
+  applied: boolean
+}
+
+/** Constraints for the camera: continuous focus and a little zoom, where it has them. */
+const CAMERA_TUNING = [{ focusMode: 'continuous' }, { zoom: PREFERRED_ZOOM }] as const
+
+/**
+ * Applies continuous focus and a little zoom where the camera supports them.
+ * Resolves to whether anything was applied, so the caller can wait for the
+ * picture to settle before showing it.
+ */
+async function tuneCamera(track: MediaStreamTrack): Promise<CameraTuning> {
   const capabilities = (
     typeof track.getCapabilities === 'function' ? track.getCapabilities() : {}
   ) as CameraCapabilities
+  const settings = (typeof track.getSettings === 'function' ? track.getSettings() : {}) as {
+    zoom?: number
+  }
   const advanced: Record<string, unknown>[] = []
   if (capabilities.focusMode?.includes('continuous')) advanced.push({ focusMode: 'continuous' })
-  if (capabilities.zoom && capabilities.zoom.max >= PREFERRED_ZOOM) {
+  if (
+    capabilities.zoom &&
+    capabilities.zoom.max >= PREFERRED_ZOOM &&
+    settings.zoom !== Math.max(capabilities.zoom.min, PREFERRED_ZOOM)
+  ) {
     advanced.push({ zoom: Math.max(capabilities.zoom.min, PREFERRED_ZOOM) })
   }
+  let applied = false
   for (const constraint of advanced) {
     try {
       await track.applyConstraints({ advanced: [constraint] })
+      applied = true
     } catch {
       // Not every camera accepts what it advertises; scanning works without it.
     }
   }
-  return capabilities
+  return { capabilities, applied }
 }
+
+/** Time the camera needs to show the new zoom, so the picture does not jump. */
+const SETTLE_MS = 350
 
 /** Draws one part of the frame on `canvas` and returns its size. */
 function cropView(
@@ -140,7 +164,10 @@ export async function startLiveScanner(
         facingMode: { ideal: 'environment' },
         width: { ideal: 1920 },
         height: { ideal: 1080 },
-      },
+        // Asked from the start, so the first picture is already zoomed where the
+        // camera allows it; cameras without these simply ignore them.
+        advanced: CAMERA_TUNING.map((constraint) => ({ ...constraint })),
+      } as MediaTrackConstraints,
     })
   } catch (error) {
     throw toScannerError(error)
@@ -165,11 +192,15 @@ export async function startLiveScanner(
     video.setAttribute('playsinline', '')
     await video.play()
 
-    const [capabilities, detector, decoder] = await Promise.all([
-      track ? tuneCamera(track) : Promise.resolve<CameraCapabilities>({}),
+    const [tuning, detector, decoder] = await Promise.all([
+      track
+        ? tuneCamera(track)
+        : Promise.resolve<CameraTuning>({ capabilities: {}, applied: false }),
       createNativeDetector(),
       import('./frameDecoder'),
     ])
+    const { capabilities } = tuning
+    if (tuning.applied) await new Promise((resolve) => window.setTimeout(resolve, SETTLE_MS))
     const confirmer = new decoder.ReadConfirmer()
     const canvas = document.createElement('canvas')
     let frame = 0

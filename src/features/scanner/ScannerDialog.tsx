@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button'
 import { CameraIcon, CloseIcon, FlashlightIcon } from '@/components/ui/icons'
 import { inputClassName } from '@/components/ui/styles'
 import { type MessageKey, useI18n } from '@/i18n'
+import { cn } from '@/lib/cn'
 
 import {
   decodeImageFile,
@@ -137,7 +138,11 @@ export function ScannerDialog({ open, onClose, onDetected }: ScannerDialogProps)
         <div className="relative flex-1 overflow-hidden">
           <video
             ref={videoRef}
-            className="absolute inset-0 size-full object-cover"
+            className={cn(
+              'absolute inset-0 size-full object-cover transition-opacity duration-300',
+              // Hidden until the camera has its zoom and focus, so the picture does not jump.
+              state.kind === 'starting' ? 'opacity-0' : 'opacity-100',
+            )}
             muted
             playsInline
             aria-hidden="true"
