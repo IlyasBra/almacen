@@ -9,7 +9,6 @@ import {
   formatAmount,
   parseAmount,
   stockStatus,
-  suggestedOrder,
   validateProductInput,
 } from './model'
 import { type ProductInput } from './types'
@@ -63,11 +62,6 @@ describe('product model', () => {
     [1, 0, 'ok'],
   ] as const)('quantity %s with minimum %s is %s', (quantity, minimum, status) => {
     expect(stockStatus(quantity, minimum)).toBe(status)
-  })
-
-  it('suggests ordering up to twice the minimum', () => {
-    expect(suggestedOrder({ quantity: 2, minimum: 5 })).toBe(8)
-    expect(suggestedOrder({ quantity: 12, minimum: 5 })).toBe(0)
   })
 
   it('validates name, numbers and duplicated barcodes', () => {

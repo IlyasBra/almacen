@@ -3,7 +3,8 @@ import { useId } from 'react'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { SearchIcon } from '@/components/ui/icons'
-import { inputClassName } from '@/components/ui/styles'
+import { chipClassName, inputClassName } from '@/components/ui/styles'
+import { CategoryChips } from '@/features/categories/components/CategoryChips'
 import { useInventory } from '@/features/inventory/useInventory'
 import { useI18n } from '@/i18n'
 import { cn } from '@/lib/cn'
@@ -19,13 +20,6 @@ interface InventoryViewProps {
   onCreate: () => void
   onManageCategories: () => void
 }
-
-const chipClassName =
-  'inline-flex h-9 shrink-0 items-center rounded-full px-3.5 text-sm font-medium ring-1 transition-colors'
-const chipOff =
-  'bg-white text-slate-700 ring-slate-300 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700'
-const chipOn =
-  'bg-slate-900 text-white ring-slate-900 dark:bg-white dark:text-slate-900 dark:ring-white'
 
 export function InventoryView({
   filter,
@@ -109,30 +103,14 @@ export function InventoryView({
         />
       </div>
 
-      <div
-        role="group"
-        aria-label={t('inventory.categoryGroup')}
-        className="-mx-4 flex [scrollbar-width:none] gap-2 overflow-x-auto px-4 pb-1"
+      <CategoryChips
+        categories={categories}
+        hasUncategorized={hasUncategorized}
+        value={filter.category}
+        onChange={(category) => {
+          onFilterChange({ ...filter, category })
+        }}
       >
-        {[
-          { id: 'all', name: t('inventory.allCategories') },
-          ...categories,
-          ...(hasUncategorized && categories.length > 0
-            ? [{ id: 'none', name: t('inventory.noCategory') }]
-            : []),
-        ].map((option) => (
-          <button
-            key={option.id}
-            type="button"
-            aria-pressed={filter.category === option.id}
-            onClick={() => {
-              onFilterChange({ ...filter, category: option.id })
-            }}
-            className={cn(chipClassName, filter.category === option.id ? chipOn : chipOff)}
-          >
-            {option.name}
-          </button>
-        ))}
         <button
           type="button"
           onClick={onManageCategories}
@@ -143,7 +121,7 @@ export function InventoryView({
         >
           {categories.length > 0 ? t('inventory.editCategories') : t('inventory.createCategories')}
         </button>
-      </div>
+      </CategoryChips>
 
       {visible.length === 0 ? (
         <EmptyState title={t('inventory.noMatch')} />

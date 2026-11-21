@@ -87,11 +87,6 @@ export function unitLabel(unit: string): string {
   return isUnit(unit) ? t(`unit.${unit}`) : unit
 }
 
-/** How many to order to reach twice the minimum. 0 when nothing is needed. */
-export function suggestedOrder(product: Pick<Product, 'quantity' | 'minimum'>): number {
-  return clampQuantity(product.minimum * 2 - product.quantity)
-}
-
 export interface ProductInputErrors {
   name?: string
   barcode?: string

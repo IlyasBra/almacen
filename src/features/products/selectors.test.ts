@@ -2,13 +2,12 @@ import { describe, expect, it } from 'vitest'
 
 import { makeProduct } from '@/test/factories'
 
-import { formatAmount } from './model'
 import {
   EMPTY_PRODUCT_FILTER,
   filterProducts,
   findByBarcode,
   restockList,
-  restockText,
+  inCategory,
   summarizeStock,
 } from './selectors'
 
@@ -49,13 +48,14 @@ describe('product selectors', () => {
 
   it('lists products to restock, sold out first', () => {
     expect(restockList(all)).toEqual([arroz, lejia])
-    expect(restockText(all, formatAmount)).toBe(
-      [
-        'Pedido para el almacén:',
-        '- Arroz: quedan 0 unidades (pedir unas 20)',
-        '- Lejía: quedan 3 botellas (pedir unas 9)',
-      ].join('\n'),
-    )
+  })
+
+  it('tells whether a product is in a category', () => {
+    expect(inCategory(agua, 'all')).toBe(true)
+    expect(inCategory(agua, 'bebidas')).toBe(true)
+    expect(inCategory(agua, 'none')).toBe(false)
+    expect(inCategory(arroz, 'none')).toBe(true)
+    expect(inCategory(arroz, 'bebidas')).toBe(false)
   })
 
   it('finds a product by barcode, ignoring blanks', () => {

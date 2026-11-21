@@ -1,7 +1,6 @@
-import { t } from '@/i18n'
 import { matchesQuery } from '@/lib/text'
 
-import { stockStatus, suggestedOrder, unitLabel } from './model'
+import { stockStatus } from './model'
 import { type Product, type StockStatus } from './types'
 
 /** "all", "none" (no category) or a category id. */
@@ -19,19 +18,23 @@ export function productStatus(product: Pick<Product, 'quantity' | 'minimum'>): S
   return stockStatus(product.quantity, product.minimum)
 }
 
+/** Whether the product belongs to the chosen category ('all' and 'none' are not ids). */
+export function inCategory(
+  product: Pick<Product, 'categoryId'>,
+  category: CategoryFilter,
+): boolean {
+  if (category === 'all') return true
+  if (category === 'none') return product.categoryId === null
+  return product.categoryId === category
+}
+
 /**
  * Products matching every part of the filter. The search looks at the name,
  * barcode, location and notes, ignoring case and accents.
  */
 export function filterProducts(products: readonly Product[], filter: ProductFilter): Product[] {
   return products.filter((product) => {
-    if (filter.category === 'none' && product.categoryId !== null) return false
-    if (
-      filter.category !== 'all' &&
-      filter.category !== 'none' &&
-      product.categoryId !== filter.category
-    )
-      return false
+    if (!inCategory(product, filter.category)) return false
     if (filter.status !== 'all' && productStatus(product) !== filter.status) return false
     const text = [product.name, product.barcode, product.location, product.notes].join(' ')
     return matchesQuery(text, filter.query)
@@ -63,20 +66,6 @@ export function restockList(products: readonly Product[]): Product[] {
         Number(productStatus(a) !== 'out') - Number(productStatus(b) !== 'out') ||
         a.name.localeCompare(b.name),
     )
-}
-
-/** Plain-text order list, ready to paste in a message. */
-export function restockText(products: readonly Product[], format: (n: number) => string): string {
-  const lines = restockList(products).map((product) => {
-    const order = suggestedOrder(product)
-    const base = t('restock.textLine', {
-      name: product.name,
-      amount: format(product.quantity),
-      unit: unitLabel(product.unit),
-    })
-    return order > 0 ? `${base} ${t('restock.textOrder', { amount: format(order) })}` : base
-  })
-  return [t('restock.textTitle'), ...lines].join('\n')
 }
 
 /**
