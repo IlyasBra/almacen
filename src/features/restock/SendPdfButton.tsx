@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { ShareIcon } from '@/components/ui/icons'
 import { useInventory } from '@/features/inventory/useInventory'
+import { formatAmount, unitLabel } from '@/features/products/model'
 import { type Product } from '@/features/products/types'
 import { intlLocale, useI18n } from '@/i18n'
 
@@ -36,7 +37,7 @@ interface SendPdfButtonProps {
   products: readonly Product[]
 }
 
-/** Makes the supplier PDF (photo, name and barcode of each product) and shares it. */
+/** Makes the PDF (photo, name, barcode and stock of each product) and shares it. */
 export function SendPdfButton({ products }: SendPdfButtonProps) {
   const { getPhoto } = useInventory()
   const { t, language, dir } = useI18n()
@@ -50,6 +51,8 @@ export function SendPdfButton({ products }: SendPdfButtonProps) {
         products.map(async (product) => ({
           name: product.name,
           barcode: product.barcode,
+          quantity: formatAmount(product.quantity),
+          unit: unitLabel(product.unit),
           photo: product.photoId ? ((await getPhoto(product.photoId)) ?? null) : null,
         })),
       )

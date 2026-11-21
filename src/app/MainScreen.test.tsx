@@ -155,23 +155,28 @@ describe('MainScreen', () => {
     expect(await repositories.products.list()).toMatchObject([{ barcode: '777' }])
   })
 
-  it('offers the supplier PDF only while looking at low or sold-out products', async () => {
+  it('sends a PDF of exactly the products on screen', async () => {
+    const bebidas = makeCategory({ name: 'Bebidas' })
     const { user } = renderApp({
+      categories: [bebidas],
       products: [
         makeProduct({ name: 'Lejía', quantity: 3, minimum: 6 }),
         makeProduct({ name: 'Arroz', quantity: 0 }),
-        makeProduct({ name: 'Agua', quantity: 20, minimum: 5 }),
+        makeProduct({ name: 'Agua', quantity: 20, minimum: 5, categoryId: bebidas.id }),
       ],
     })
 
-    await screen.findByRole('button', { name: /Agua/ })
-    expect(screen.queryByRole('button', { name: /Enviar PDF/ })).not.toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Enviar PDF (3)' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /Queda poco/, pressed: false }))
     expect(screen.getByRole('button', { name: 'Enviar PDF (1)' })).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: /Agotado/, pressed: false }))
+    await user.click(screen.getByRole('button', { name: /Queda poco/, pressed: true }))
+    await user.click(screen.getByRole('button', { name: 'Bebidas' }))
     expect(screen.getByRole('button', { name: 'Enviar PDF (1)' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Agotado/, pressed: false }))
+    expect(screen.queryByRole('button', { name: /Enviar PDF/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Reponer/ })).not.toBeInTheDocument()
   })
 

@@ -1,10 +1,14 @@
 import { buildPdf, type PdfPage } from './pdf'
 import { wrapText } from './wrapText'
 
-/** One product on the sheet: only what the supplier needs to recognise it. */
+/** One product on the sheet: what the supplier needs to recognise it, and the stock. */
 export interface PdfItem {
   name: string
   barcode: string
+  /** Stock already formatted for the reader, e.g. "14". */
+  quantity: string
+  /** Unit already translated, e.g. "botellas". */
+  unit: string
   photo: Blob | null
 }
 
@@ -27,6 +31,8 @@ const FOOTER_HEIGHT = 60
 const ROW_HEIGHT = 250
 const PHOTO_SIZE = 200
 const GAP = 40
+/** Width of the column on the far side that holds the quantity. */
+const QUANTITY_WIDTH = 230
 const FONT = 'system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
 
 /** How many rows fit on the first page (with the title) and on the next ones. */
@@ -115,7 +121,7 @@ function drawRow(
   const photoY = top + (ROW_HEIGHT - PHOTO_SIZE) / 2
   drawPhoto(context, photo, item.name, photoX, photoY)
 
-  const textWidth = PAGE_WIDTH - 2 * MARGIN - PHOTO_SIZE - GAP
+  const textWidth = PAGE_WIDTH - 2 * MARGIN - PHOTO_SIZE - QUANTITY_WIDTH - 2 * GAP
   const textX = rtl ? PAGE_WIDTH - MARGIN - PHOTO_SIZE - GAP : MARGIN + PHOTO_SIZE + GAP
   context.textAlign = rtl ? 'right' : 'left'
   context.textBaseline = 'alphabetic'
@@ -145,6 +151,25 @@ function drawRow(
   // The "no barcode" note is a sentence, so it follows the language direction.
   if (!item.barcode) context.direction = rtl ? 'rtl' : 'ltr'
   context.fillText(item.barcode || labels.noBarcode, textX, y)
+
+  // Quantity at the far end, big, with its unit under it. Digits always read left to right.
+  const quantityX = rtl ? MARGIN : PAGE_WIDTH - MARGIN
+  const middle = top + ROW_HEIGHT / 2
+  context.textAlign = rtl ? 'left' : 'right'
+  context.direction = 'ltr'
+  context.fillStyle = '#0f172a'
+  context.font = `700 64px ${FONT}`
+  context.fillText(item.quantity, quantityX, middle + 8)
+  context.direction = rtl ? 'rtl' : 'ltr'
+  context.fillStyle = '#64748b'
+  context.font = `500 28px ${FONT}`
+  const [unitLine = ''] = wrapText(
+    item.unit,
+    QUANTITY_WIDTH,
+    1,
+    (value) => context.measureText(value).width,
+  )
+  context.fillText(unitLine, quantityX, middle + 52)
 
   context.strokeStyle = '#e2e8f0'
   context.lineWidth = 2

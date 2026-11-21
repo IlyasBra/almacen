@@ -10,7 +10,7 @@ import { SendPdfButton } from '@/features/restock/SendPdfButton'
 import { useI18n } from '@/i18n'
 import { cn } from '@/lib/cn'
 
-import { filterProducts, type ProductFilter, restockList, summarizeStock } from '../selectors'
+import { filterProducts, type ProductFilter, summarizeStock } from '../selectors'
 import { type Product, type StockStatus } from '../types'
 import { ProductRow } from './ProductRow'
 
@@ -86,9 +86,7 @@ export function InventoryView({
         />
       </div>
 
-      {(filter.status === 'low' || filter.status === 'out') && visible.length > 0 && (
-        <SendPdfButton products={restockList(visible)} />
-      )}
+      {visible.length > 0 && <SendPdfButton products={visible} />}
 
       <div className="relative">
         <label htmlFor={searchId} className="sr-only">
