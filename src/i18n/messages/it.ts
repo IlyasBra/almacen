@@ -6,6 +6,7 @@ export const it: Messages = {
   'common.save': 'Salva',
   'common.add': 'Aggiungi',
   'common.close': 'Chiudi',
+  'photo.enlarge': 'Ingrandisci la foto di {name}',
   'common.loading': 'Caricamento…',
   'confirm.before': 'Vuoi davvero eliminare ',
   'confirm.after': '? Non si può annullare.',

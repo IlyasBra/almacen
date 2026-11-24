@@ -1,3 +1,6 @@
+import { useState } from 'react'
+
+import { PhotoViewer } from '@/features/photos/PhotoViewer'
 import { ProductPhoto } from '@/features/photos/ProductPhoto'
 import { cn } from '@/lib/cn'
 
@@ -17,10 +20,11 @@ interface ProductRowProps {
 }
 
 export function ProductRow({ product, detail, onOpen }: ProductRowProps) {
-  useI18n() // re-render when the language changes
+  const { t } = useI18n()
+  const [viewingPhoto, setViewingPhoto] = useState(false)
   const status = productStatus(product)
   return (
-    <li>
+    <li className="relative">
       <button
         type="button"
         onClick={() => {
@@ -53,6 +57,27 @@ export function ProductRow({ product, detail, onOpen }: ProductRowProps) {
           <StockBadge status={status} />
         </span>
       </button>
+      {product.photoId && (
+        // Sits over the photo, beside the row button (a button cannot hold a button).
+        <button
+          type="button"
+          onClick={() => {
+            setViewingPhoto(true)
+          }}
+          className="absolute start-4 top-1/2 size-12 -translate-y-1/2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+        >
+          <span className="sr-only">{t('photo.enlarge', { name: product.name })}</span>
+        </button>
+      )}
+      {viewingPhoto && product.photoId && (
+        <PhotoViewer
+          photoId={product.photoId}
+          name={product.name}
+          onClose={() => {
+            setViewingPhoto(false)
+          }}
+        />
+      )}
     </li>
   )
 }

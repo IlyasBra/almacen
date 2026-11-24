@@ -6,6 +6,7 @@ import { BarcodeIcon, MinusIcon, PencilIcon, PlusIcon } from '@/components/ui/ic
 import { inputClassName } from '@/components/ui/styles'
 import { useInventory } from '@/features/inventory/useInventory'
 import { MovementList } from '@/features/movements/components/MovementList'
+import { PhotoViewer } from '@/features/photos/PhotoViewer'
 import { ProductPhoto } from '@/features/photos/ProductPhoto'
 import { useI18n } from '@/i18n'
 import { cn } from '@/lib/cn'
@@ -108,6 +109,7 @@ function ProductDetails({
   const amountId = useId()
   const [amount, setAmount] = useState('')
   const [amountError, setAmountError] = useState<string | null>(null)
+  const [viewingPhoto, setViewingPhoto] = useState(false)
 
   const submitAmount = (direction: 1 | -1) => (event?: SubmitEvent<HTMLFormElement>) => {
     event?.preventDefault()
@@ -138,11 +140,31 @@ function ProductDetails({
       )}
 
       {product.photoId && (
-        <ProductPhoto
-          photoId={product.photoId}
-          name={product.name}
-          className="aspect-[4/3] w-full rounded-xl text-5xl"
-        />
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              setViewingPhoto(true)
+            }}
+            className="block w-full rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+          >
+            <ProductPhoto
+              photoId={product.photoId}
+              name={product.name}
+              className="aspect-[4/3] w-full rounded-xl text-5xl"
+            />
+            <span className="sr-only">{t('photo.enlarge', { name: product.name })}</span>
+          </button>
+          {viewingPhoto && (
+            <PhotoViewer
+              photoId={product.photoId}
+              name={product.name}
+              onClose={() => {
+                setViewingPhoto(false)
+              }}
+            />
+          )}
+        </>
       )}
 
       <section

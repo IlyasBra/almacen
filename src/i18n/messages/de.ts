@@ -6,6 +6,7 @@ export const de: Messages = {
   'common.save': 'Speichern',
   'common.add': 'Hinzufügen',
   'common.close': 'Schließen',
+  'photo.enlarge': 'Foto von {name} vergrößern',
   'common.loading': 'Wird geladen…',
   'confirm.before': 'Möchtest du wirklich ',
   'confirm.after': ' löschen? Das lässt sich nicht rückgängig machen.',

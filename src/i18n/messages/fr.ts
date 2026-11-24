@@ -6,6 +6,7 @@ export const fr: Messages = {
   'common.save': 'Enregistrer',
   'common.add': 'Ajouter',
   'common.close': 'Fermer',
+  'photo.enlarge': 'Agrandir la photo de {name}',
   'common.loading': 'Chargement…',
   'confirm.before': 'Voulez-vous vraiment supprimer ',
   'confirm.after': ' ? Cette action est irréversible.',

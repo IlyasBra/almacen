@@ -6,6 +6,7 @@ export const en: Messages = {
   'common.save': 'Save',
   'common.add': 'Add',
   'common.close': 'Close',
+  'photo.enlarge': 'Enlarge photo of {name}',
   'common.loading': 'Loading…',
   'confirm.before': 'Are you sure you want to delete ',
   'confirm.after': '? This cannot be undone.',

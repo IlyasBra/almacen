@@ -10,6 +10,7 @@ export const es = {
   'common.save': 'Guardar',
   'common.add': 'Añadir',
   'common.close': 'Cerrar',
+  'photo.enlarge': 'Ampliar la foto de {name}',
   'common.loading': 'Cargando…',
   'confirm.before': '¿Seguro que quieres borrar ',
   'confirm.after': '? No se puede deshacer.',

@@ -6,6 +6,7 @@ export const ar: Messages = {
   'common.save': 'حفظ',
   'common.add': 'إضافة',
   'common.close': 'إغلاق',
+  'photo.enlarge': 'تكبير صورة {name}',
   'common.loading': 'جارٍ التحميل…',
   'confirm.before': 'هل أنت متأكد أنك تريد حذف ',
   'confirm.after': '؟ لا يمكن التراجع عن ذلك.',
