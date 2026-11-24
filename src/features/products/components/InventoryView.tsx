@@ -135,12 +135,8 @@ export function InventoryView({
               key={product.id}
               product={product}
               detail={
-                [
-                  product.categoryId ? categoryName.get(product.categoryId) : undefined,
-                  product.location,
-                ]
-                  .filter(Boolean)
-                  .join(' · ') || t('inventory.noDetail')
+                (product.categoryId ? categoryName.get(product.categoryId) : undefined) ??
+                t('inventory.noDetail')
               }
               onOpen={onOpen}
             />

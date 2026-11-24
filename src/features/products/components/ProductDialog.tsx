@@ -246,7 +246,6 @@ function ProductDetails({
 
       <dl className="grid grid-cols-2 gap-2 text-sm">
         <Fact label={t('product.category')} value={categoryName ?? '—'} />
-        <Fact label={t('product.location')} value={product.location || '—'} />
         <Fact
           label={t('product.minimum')}
           value={

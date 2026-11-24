@@ -403,7 +403,7 @@ function ProductForm({
           </p>
         </Field>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3">
           <Field
             label={t('form.category')}
             htmlFor={`${id}-category`}
@@ -423,20 +423,6 @@ function ProductForm({
               ))}
               <option value={NEW_CATEGORY}>{t('form.newCategoryOption')}</option>
             </select>
-          </Field>
-          <Field
-            label={t('form.location')}
-            htmlFor={`${id}-location`}
-            errorId={errorId('location')}
-          >
-            <input
-              id={`${id}-location`}
-              value={draft.location}
-              onChange={set('location')}
-              autoComplete="off"
-              placeholder={t('form.locationPlaceholder')}
-              className={inputClassName}
-            />
           </Field>
         </div>
 

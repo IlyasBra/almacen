@@ -30,13 +30,13 @@ export function inCategory(
 
 /**
  * Products matching every part of the filter. The search looks at the name,
- * barcode, location and notes, ignoring case and accents.
+ * barcode and notes, ignoring case and accents.
  */
 export function filterProducts(products: readonly Product[], filter: ProductFilter): Product[] {
   return products.filter((product) => {
     if (!inCategory(product, filter.category)) return false
     if (filter.status !== 'all' && productStatus(product) !== filter.status) return false
-    const text = [product.name, product.barcode, product.location, product.notes].join(' ')
+    const text = [product.name, product.barcode, product.notes].join(' ')
     return matchesQuery(text, filter.query)
   })
 }

@@ -30,10 +30,10 @@ const arroz = makeProduct({ name: 'Arroz', categoryId: null, quantity: 0, minimu
 const all = [agua, lejia, arroz]
 
 describe('product selectors', () => {
-  it('searches name, barcode and location without caring about accents', () => {
+  it('searches name and barcode, not the old location field, without caring about accents', () => {
     expect(filterProducts(all, { ...EMPTY_PRODUCT_FILTER, query: 'lejia' })).toEqual([lejia])
     expect(filterProducts(all, { ...EMPTY_PRODUCT_FILTER, query: '111' })).toEqual([agua])
-    expect(filterProducts(all, { ...EMPTY_PRODUCT_FILTER, query: 'estanteria' })).toEqual([lejia])
+    expect(filterProducts(all, { ...EMPTY_PRODUCT_FILTER, query: 'estanteria' })).toEqual([])
   })
 
   it('filters by category, by "no category" and by stock status', () => {
