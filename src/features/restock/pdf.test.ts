@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { buildPdf } from './pdf'
-import { paginate } from './restockPdf'
+import { type PdfGroup, type PdfItem, pageShape } from './restockPdf'
 import { wrapText } from './wrapText'
 
 const decode = (bytes: Uint8Array) => new TextDecoder('latin1').decode(bytes)
@@ -70,11 +70,48 @@ describe('wrapText', () => {
   })
 })
 
-describe('paginate', () => {
-  it('always gives at least one page and fewer rows on the first', () => {
-    expect(paginate([])).toEqual([[]])
-    const pages = paginate(Array.from({ length: 20 }, (_, i) => i))
-    expect(pages.flat()).toHaveLength(20)
-    expect(pages[0]?.length).toBeLessThan(pages[1]?.length ?? 0)
+describe('pageShape', () => {
+  const item = (name: string): PdfItem => ({
+    name,
+    barcode: '',
+    quantity: '1',
+    unit: 'unidades',
+    photo: null,
+  })
+  const many = (count: number) => Array.from({ length: count }, (_, i) => item(`P${i}`))
+
+  it('always gives at least one page', () => {
+    expect(pageShape([])).toEqual([{ headings: 0, items: 0 }])
+  })
+
+  it('puts a heading before each category', () => {
+    const groups: PdfGroup[] = [
+      { title: 'Bebidas', items: many(2) },
+      { title: 'Limpieza', items: many(1) },
+    ]
+    expect(pageShape(groups)).toEqual([{ headings: 2, items: 3 }])
+  })
+
+  it('has no headings when the sheet has no categories', () => {
+    expect(pageShape([{ title: null, items: many(3) }])).toEqual([{ headings: 0, items: 3 }])
+  })
+
+  it('never leaves a heading alone at the end of a page', () => {
+    // 4 rows and a heading fill the first page; the next category must start on page two.
+    const pages = pageShape([
+      { title: 'A', items: many(4) },
+      { title: 'B', items: many(2) },
+    ])
+    expect(pages).toHaveLength(2)
+    expect(pages[0]).toEqual({ headings: 1, items: 4 })
+    expect(pages[1]).toEqual({ headings: 1, items: 2 })
+  })
+
+  it('keeps every product', () => {
+    const pages = pageShape([
+      { title: 'A', items: many(9) },
+      { title: 'B', items: many(9) },
+    ])
+    expect(pages.reduce((sum, page) => sum + page.items, 0)).toBe(18)
   })
 })

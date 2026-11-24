@@ -7,7 +7,7 @@ import { formatAmount, unitLabel } from '@/features/products/model'
 import { type Product } from '@/features/products/types'
 import { intlLocale, type MessageKey, useI18n } from '@/i18n'
 
-import { createRestockPdf } from './restockPdf'
+import { createRestockPdf, type PdfGroup, type PdfItem } from './restockPdf'
 
 /** Shares the PDF where the phone allows it; otherwise saves it as a download. */
 async function deliver(file: File, title: string): Promise<void> {
@@ -55,7 +55,7 @@ interface SendPdfButtonProps {
 
 /** Makes the PDF (photo, name, barcode and stock of each product) and shares it. */
 export function SendPdfButton({ products, kind }: SendPdfButtonProps) {
-  const { getPhoto } = useInventory()
+  const { getPhoto, categories } = useInventory()
   const { t, language, dir } = useI18n()
   const [status, setStatus] = useState<'idle' | 'busy' | 'failed'>('idle')
 
@@ -65,16 +65,32 @@ export function SendPdfButton({ products, kind }: SendPdfButtonProps) {
     setStatus('busy')
     try {
       const now = new Date()
-      const items = await Promise.all(
-        products.map(async (product) => ({
-          name: product.name,
-          barcode: product.barcode,
-          quantity: formatAmount(product.quantity),
-          unit: unitLabel(product.unit),
-          photo: product.photoId ? ((await getPhoto(product.photoId)) ?? null) : null,
+      const items = new Map<string | null, PdfItem[]>()
+      await Promise.all(
+        products.map(async (product) => {
+          const item: PdfItem = {
+            name: product.name,
+            barcode: product.barcode,
+            quantity: formatAmount(product.quantity),
+            unit: unitLabel(product.unit),
+            photo: product.photoId ? ((await getPhoto(product.photoId)) ?? null) : null,
+          }
+          return [product.categoryId, item] as const
+        }),
+      ).then((pairs) => {
+        for (const [categoryId, item] of pairs)
+          items.set(categoryId, [...(items.get(categoryId) ?? []), item])
+      })
+      // One block per category, in the app's order, then the products without one.
+      const hasCategories = categories.length > 0
+      const groups: PdfGroup[] = [
+        ...categories.map((category) => ({
+          title: category.name,
+          items: items.get(category.id) ?? [],
         })),
-      )
-      const blob = await createRestockPdf(items, {
+        { title: hasCategories ? t('inventory.noCategory') : null, items: items.get(null) ?? [] },
+      ].filter((group) => group.items.length > 0)
+      const blob = await createRestockPdf(groups, {
         title,
         date: new Intl.DateTimeFormat(intlLocale(language), { dateStyle: 'long' }).format(now),
         barcode: t('restock.pdfBarcode'),

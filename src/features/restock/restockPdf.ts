@@ -12,6 +12,12 @@ export interface PdfItem {
   photo: Blob | null
 }
 
+/** Products of one category; `title` is null when the sheet has no categories to show. */
+export interface PdfGroup {
+  title: string | null
+  items: readonly PdfItem[]
+}
+
 export interface PdfLabels {
   title: string
   /** Date already formatted for the reader. */
@@ -27,7 +33,7 @@ const PAGE_WIDTH = 1240
 const PAGE_HEIGHT = 1754
 const MARGIN = 90
 const HEADER_HEIGHT = 170
-const FOOTER_HEIGHT = 60
+const FOOTER_HEIGHT = 40
 const ROW_HEIGHT = 250
 const PHOTO_SIZE = 200
 const GAP = 40
@@ -35,22 +41,52 @@ const GAP = 40
 const QUANTITY_WIDTH = 230
 const FONT = 'system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
 
-/** How many rows fit on the first page (with the title) and on the next ones. */
-function rowsPerPage(first: boolean): number {
-  const room = PAGE_HEIGHT - 2 * MARGIN - FOOTER_HEIGHT - (first ? HEADER_HEIGHT : 0)
-  return Math.floor(room / ROW_HEIGHT)
+const HEADING_HEIGHT = 110
+
+type Entry = { kind: 'heading'; text: string } | { kind: 'item'; item: PdfItem }
+
+/** The sheet as one list of category headings and product rows. */
+function entriesOf(groups: readonly PdfGroup[]): Entry[] {
+  return groups.flatMap((group) => [
+    ...(group.title === null ? [] : [{ kind: 'heading', text: group.title } as const]),
+    ...group.items.map((item) => ({ kind: 'item', item }) as const),
+  ])
 }
 
-/** Items split into pages. */
-export function paginate<T>(items: readonly T[]): T[][] {
-  const pages: T[][] = []
-  let index = 0
-  do {
-    const size = rowsPerPage(pages.length === 0)
-    pages.push(items.slice(index, index + size))
-    index += size
-  } while (index < items.length)
+const entryHeight = (entry: Entry) => (entry.kind === 'heading' ? HEADING_HEIGHT : ROW_HEIGHT)
+
+/**
+ * Entries split into pages. A heading never ends a page: it moves to the next
+ * one together with its first product.
+ */
+function paginate(entries: readonly Entry[]): Entry[][] {
+  const room = (first: boolean) =>
+    PAGE_HEIGHT - 2 * MARGIN - FOOTER_HEIGHT - (first ? HEADER_HEIGHT : 0)
+  const pages: Entry[][] = []
+  let page: Entry[] = []
+  let used = 0
+  let capacity = room(true)
+  for (const entry of entries) {
+    const needed = entry.kind === 'heading' ? HEADING_HEIGHT + ROW_HEIGHT : ROW_HEIGHT
+    if (used + needed > capacity && page.length > 0) {
+      pages.push(page)
+      page = []
+      used = 0
+      capacity = room(false)
+    }
+    page.push(entry)
+    used += entryHeight(entry)
+  }
+  pages.push(page)
   return pages
+}
+
+/** Pages of a sheet, as the numbers of headings and products on each (for tests). */
+export function pageShape(groups: readonly PdfGroup[]): { headings: number; items: number }[] {
+  return paginate(entriesOf(groups)).map((page) => ({
+    headings: page.filter((entry) => entry.kind === 'heading').length,
+    items: page.filter((entry) => entry.kind === 'item').length,
+  }))
 }
 
 async function loadPhoto(blob: Blob | null): Promise<ImageBitmap | null> {
@@ -179,6 +215,33 @@ function drawRow(
   context.stroke()
 }
 
+function drawHeading(
+  context: CanvasRenderingContext2D,
+  text: string,
+  top: number,
+  labels: PdfLabels,
+) {
+  const { rtl } = labels
+  const height = 76
+  const y = top + (HEADING_HEIGHT - height) / 2 + 8
+  context.fillStyle = '#e0e7ff'
+  context.beginPath()
+  context.roundRect(MARGIN, y, PAGE_WIDTH - 2 * MARGIN, height, 18)
+  context.fill()
+  context.fillStyle = '#312e81'
+  context.font = `700 40px ${FONT}`
+  context.textAlign = rtl ? 'right' : 'left'
+  context.textBaseline = 'middle'
+  context.direction = rtl ? 'rtl' : 'ltr'
+  const [line = ''] = wrapText(
+    text,
+    PAGE_WIDTH - 2 * MARGIN - 60,
+    1,
+    (value) => context.measureText(value).width,
+  )
+  context.fillText(line, rtl ? PAGE_WIDTH - MARGIN - 30 : MARGIN + 30, y + height / 2 + 2)
+}
+
 function drawHeader(context: CanvasRenderingContext2D, labels: PdfLabels) {
   const { rtl } = labels
   context.textAlign = rtl ? 'right' : 'left'
@@ -220,9 +283,9 @@ function toJpeg(canvas: HTMLCanvasElement): Promise<Uint8Array> {
   })
 }
 
-/** The supplier sheet: a photo, the name and the barcode number of each product. */
+/** The sheet: products grouped by category, each with photo, name, barcode and stock. */
 export async function createRestockPdf(
-  items: readonly PdfItem[],
+  groups: readonly PdfGroup[],
   labels: PdfLabels,
 ): Promise<Blob> {
   const canvas = document.createElement('canvas')
@@ -231,17 +294,22 @@ export async function createRestockPdf(
   const context = canvas.getContext('2d')
   if (!context) throw new Error('Canvas is not available')
 
-  const sheets = paginate(items)
+  const sheets = paginate(entriesOf(groups))
   const pages: PdfPage[] = []
   for (const [index, sheet] of sheets.entries()) {
     context.fillStyle = '#ffffff'
     context.fillRect(0, 0, PAGE_WIDTH, PAGE_HEIGHT)
     if (index === 0) drawHeader(context, labels)
-    const photos = await Promise.all(sheet.map((item) => loadPhoto(item.photo)))
+    const photos = await Promise.all(
+      sheet.map((entry) =>
+        entry.kind === 'item' ? loadPhoto(entry.item.photo) : Promise.resolve(null),
+      ),
+    )
     let top = MARGIN + (index === 0 ? HEADER_HEIGHT : 0)
-    for (const [row, item] of sheet.entries()) {
-      drawRow(context, item, photos[row] ?? null, top, labels)
-      top += ROW_HEIGHT
+    for (const [row, entry] of sheet.entries()) {
+      if (entry.kind === 'heading') drawHeading(context, entry.text, top, labels)
+      else drawRow(context, entry.item, photos[row] ?? null, top, labels)
+      top += entryHeight(entry)
     }
     for (const photo of photos) photo?.close()
     drawFooter(context, index + 1, sheets.length)
