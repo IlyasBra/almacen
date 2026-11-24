@@ -5,7 +5,7 @@ import { ShareIcon } from '@/components/ui/icons'
 import { useInventory } from '@/features/inventory/useInventory'
 import { formatAmount, unitLabel } from '@/features/products/model'
 import { type Product } from '@/features/products/types'
-import { intlLocale, useI18n } from '@/i18n'
+import { intlLocale, type MessageKey, useI18n } from '@/i18n'
 
 import { createRestockPdf } from './restockPdf'
 
@@ -32,16 +32,34 @@ async function deliver(file: File, title: string): Promise<void> {
   }, 10_000)
 }
 
+/** What the sheet lists; it decides the title and the file name. */
+export type PdfKind = 'all' | 'low' | 'out'
+
+const PDF_TITLES = {
+  all: 'restock.pdfTitleAll',
+  low: 'restock.pdfTitleLow',
+  out: 'restock.pdfTitleOut',
+} as const satisfies Record<PdfKind, MessageKey>
+
+const PDF_FILE_NAMES: Record<PdfKind, string> = {
+  all: 'todos-los-productos',
+  low: 'poco-stock',
+  out: 'agotados',
+}
+
 interface SendPdfButtonProps {
   /** The products to put on the sheet, in order. */
   products: readonly Product[]
+  kind: PdfKind
 }
 
 /** Makes the PDF (photo, name, barcode and stock of each product) and shares it. */
-export function SendPdfButton({ products }: SendPdfButtonProps) {
+export function SendPdfButton({ products, kind }: SendPdfButtonProps) {
   const { getPhoto } = useInventory()
   const { t, language, dir } = useI18n()
   const [status, setStatus] = useState<'idle' | 'busy' | 'failed'>('idle')
+
+  const title = t(PDF_TITLES[kind])
 
   const send = async () => {
     setStatus('busy')
@@ -57,7 +75,7 @@ export function SendPdfButton({ products }: SendPdfButtonProps) {
         })),
       )
       const blob = await createRestockPdf(items, {
-        title: t('restock.pdfTitle'),
+        title,
         date: new Intl.DateTimeFormat(intlLocale(language), { dateStyle: 'long' }).format(now),
         barcode: t('restock.pdfBarcode'),
         noBarcode: t('restock.pdfNoBarcode'),
@@ -67,8 +85,8 @@ export function SendPdfButton({ products }: SendPdfButtonProps) {
         .map((part) => String(part).padStart(2, '0'))
         .join('-')
       await deliver(
-        new File([blob], `pedido-almacen-${day}.pdf`, { type: 'application/pdf' }),
-        t('restock.pdfTitle'),
+        new File([blob], `${PDF_FILE_NAMES[kind]}-${day}.pdf`, { type: 'application/pdf' }),
+        title,
       )
       setStatus('idle')
     } catch {

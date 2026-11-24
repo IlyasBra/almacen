@@ -139,7 +139,9 @@ export const fr: Messages = {
   'restock.sendPdf': 'Envoyer le PDF ({count})',
   'restock.pdfCreating': 'Création du PDF…',
   'restock.pdfFailed': 'Le PDF n’a pas pu être créé.',
-  'restock.pdfTitle': 'Commande pour l’entrepôt',
+  'restock.pdfTitleAll': 'Tous les produits',
+  'restock.pdfTitleLow': 'Produits en stock faible',
+  'restock.pdfTitleOut': 'Produits épuisés',
   'restock.pdfBarcode': 'Code-barres',
   'restock.pdfNoBarcode': 'Sans code-barres',
 

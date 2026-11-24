@@ -153,7 +153,9 @@ export const es = {
   'restock.sendPdf': 'Enviar PDF ({count})',
   'restock.pdfCreating': 'Creando el PDF…',
   'restock.pdfFailed': 'No se ha podido crear el PDF.',
-  'restock.pdfTitle': 'Pedido para el almacén',
+  'restock.pdfTitleAll': 'Todos los productos',
+  'restock.pdfTitleLow': 'Productos con poco stock',
+  'restock.pdfTitleOut': 'Productos agotados',
   'restock.pdfBarcode': 'Código de barras',
   'restock.pdfNoBarcode': 'Sin código de barras',
 

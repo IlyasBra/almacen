@@ -86,7 +86,9 @@ export function InventoryView({
         />
       </div>
 
-      {visible.length > 0 && <SendPdfButton products={visible} />}
+      {visible.length > 0 && (
+        <SendPdfButton products={visible} kind={filter.status === 'ok' ? 'all' : filter.status} />
+      )}
 
       <div className="relative">
         <label htmlFor={searchId} className="sr-only">

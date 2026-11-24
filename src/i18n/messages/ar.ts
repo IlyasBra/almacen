@@ -153,7 +153,9 @@ export const ar: Messages = {
   'restock.sendPdf': 'إرسال PDF ({count})',
   'restock.pdfCreating': 'جارٍ إنشاء ملف PDF…',
   'restock.pdfFailed': 'تعذّر إنشاء ملف PDF.',
-  'restock.pdfTitle': 'طلب للمستودع',
+  'restock.pdfTitleAll': 'جميع المنتجات',
+  'restock.pdfTitleLow': 'منتجات مخزونها قليل',
+  'restock.pdfTitleOut': 'منتجات نفدت',
   'restock.pdfBarcode': 'الباركود',
   'restock.pdfNoBarcode': 'بلا باركود',
 
